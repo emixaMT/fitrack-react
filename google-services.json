@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "257863169170",
+    "project_id": "fitrack-1e3f7",
+    "storage_bucket": "fitrack-1e3f7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:257863169170:android:9493fbb7ca4208e226a24b",
+        "android_client_info": {
+          "package_name": "com.maximethonneau.fitrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjbkPizUmYTAPJnJRC3IDiDv2s06Liq_I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
