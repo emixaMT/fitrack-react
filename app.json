@@ -14,23 +14,28 @@
         }
       ]
     ],
-    "name": "test",
-    "slug": "test",
+    "name": "Fitrack",
+    "slug": "fitrack",
     "extra": {
       "router": {
         "origin": "https://n"
       },
       "eas": {
-        "projectId": "4a129eb8-bc66-4186-b699-e9579ffd00e4"
+        "projectId": "4a0ddfd8-b0f8-4cfa-bd88-ff8823719714"
       }
     },
     "android": {
-      "googleServicesFile": "./google-services.json",
-      "package": "com.maximethonneau.fitrack"
+      "package": "com.maximethonneau.fitrack",
+      "permissions": [
+        "ACTIVITY_RECOGNITION"
+      ]
     },
     "ios": {
-      "googleServicesFile": "./GoogleService-Info.plist",
-      "bundleIdentifier": "com.maximethonneau.fitrack"
-    }
+      "bundleIdentifier": "com.maximethonneau.fitrack",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "owner": "oxiiz"
   }
 }

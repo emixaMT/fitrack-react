@@ -12,11 +12,9 @@ import {
 } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
-import { onAuthStateChanged } from 'firebase/auth';
-
-import { login } from '../../../services/firebaseAuth';           // doit appeler signInWithEmailAndPassword(auth, ...)
-import { checkUserExists } from '../../../services/userService';  // doit renvoyer un boolean
-import { auth } from '../../../config/firebaseConfig';            // export { auth } depuis config modulaire
+import { login } from '../../../services/supabaseAuth';
+import { checkUserExists } from '../../../services/userService';
+import { supabase } from '../../../config/supabaseConfig';
 import { checkUserStatus } from '../../../services/userService';
 
 
@@ -26,12 +24,17 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Why: redirige si une session Firebase existe déjà (évite currentUser undefined/obsolète)
+  // Why: redirige si une session Supabase existe déjà
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (user) router.replace('/home');
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace('/home');
     });
-    return unsub;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) router.replace('/home');
+    });
+
+    return () => subscription.unsubscribe();
   }, [router]);
 
   async function handleLogin() {
@@ -50,7 +53,7 @@ export default function LoginScreen() {
 
     if (!status.exists) {
       // Ton compte de dev est peut-être dans "users" ou avec un champ "uid" différent ; maintenant couvert.
-      Alert.alert('Profil introuvable', 'Aucun profil Firestore associé à ce compte.');
+      Alert.alert('Profil introuvable', 'Aucun profil utilisateur associé à ce compte.');
       return;
     }
     if (status.active === false) {
@@ -87,10 +90,10 @@ export default function LoginScreen() {
         return;
       }
 
-      // Why: la biométrie ne connecte pas à Firebase, elle déverrouille seulement l’accès local ;
-      // on exige donc une session Firebase existante.
-      const user = auth.currentUser;
-      if (!user) {
+      // Why: la biométrie ne connecte pas à Supabase, elle déverrouille seulement l'accès local ;
+      // on exige donc une session Supabase existante.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
         Alert.alert(
           'Session requise',
           'Aucune session existante. Connectez-vous une première fois avec email/mot de passe.'
@@ -98,12 +101,11 @@ export default function LoginScreen() {
         return;
       }
 
-      const exists = await checkUserExists(user.uid);
+      const exists = await checkUserExists(session.user.id);
       if (!exists) {
         Alert.alert('Erreur', 'Ce compte n’a pas encore été activé.');
         return;
       }
-
       router.replace('/home');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur biométrique';

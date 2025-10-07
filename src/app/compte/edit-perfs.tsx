@@ -6,11 +6,7 @@ import {
 } from "react-native";
 import type { ImageSourcePropType } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { auth, db } from "../../../config/firebaseConfig";
-import { onAuthStateChanged } from "firebase/auth";
-import {
-  doc, getDoc, setDoc, collection, query, orderBy, onSnapshot, addDoc,
-} from "firebase/firestore";
+import { supabase } from "../../../config/supabaseConfig";
 import { router } from "expo-router";
 
 /* Avatars locaux (on stocke uniquement l'id en base). 
@@ -50,9 +46,8 @@ export default function EditPerformances() {
   const [savingAvatar, setSavingAvatar] = useState(false);
 
   useEffect(() => {
-    let unsubWeights: undefined | (() => void);
-    const unsubAuth = onAuthStateChanged(auth, async (user) => {
-      if (unsubWeights) { unsubWeights(); unsubWeights = undefined; }
+    const loadData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setSquat(""); setBench(""); setDeadlift("");
         setRunning([]); setHyrox([]); setWeights([]);
@@ -60,85 +55,166 @@ export default function EditPerformances() {
         return;
       }
 
+      // Load performances
       try {
-        const perfRef = doc(db, "Performances", user.uid);
-        const snap = await getDoc(perfRef);
-        if (!snap.exists()) await setDoc(perfRef, {}, { merge: true });
-        else {
-          const data = snap.data() as any;
-          setSquat(data?.squat != null ? String(data.squat) : "");
-          setBench(data?.bench != null ? String(data.bench) : "");
-          setDeadlift(data?.deadlift != null ? String(data.deadlift) : "");
-          setRunning(Array.isArray(data?.running) ? data.running : []);
-          setHyrox(Array.isArray(data?.hyrox) ? data.hyrox : []);
-        }
-      } catch { Alert.alert("Erreur", "Impossible de charger les performances."); }
+        const { data: perfData } = await supabase
+          .from("performances")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
 
+        if (perfData) {
+          setSquat(perfData.squat != null ? String(perfData.squat) : "");
+          setBench(perfData.bench != null ? String(perfData.bench) : "");
+          setDeadlift(perfData.deadlift != null ? String(perfData.deadlift) : "");
+          setRunning(Array.isArray(perfData.running) ? perfData.running : []);
+          setHyrox(Array.isArray(perfData.hyrox) ? perfData.hyrox : []);
+        }
+      } catch (e) {
+        console.error("Error loading performances:", e);
+      }
+
+      // Load user profile (avatar)
       try {
-        const profRef = doc(db, "Users", user.uid);
-        const profSnap = await getDoc(profRef);
-        if (!profSnap.exists()) {
-          await setDoc(profRef, {}, { merge: true });
-        } else {
-          const pdata = profSnap.data() as any;
-          const aid = typeof pdata?.avatarId === "string" ? pdata.avatarId : undefined;
-          setSelectedAvatarId(aid);
-          setAvatarSource(getAvatarSourceById(aid)); // ← source locale via require
-        }
-      } catch {}
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("avatar_id, photo_url")
+          .eq("id", user.id)
+          .maybeSingle();
 
-      const q = query(collection(db, "Poids", user.uid, "entries"), orderBy("date", "desc"));
-      unsubWeights = onSnapshot(q, (snap) => {
-        const items = snap.docs.map((d) => {
-          const data = d.data() as any;
-          const date = typeof data?.date?.toDate === "function" ? data.date.toDate() : new Date();
-          const value = typeof data?.value === "number" ? data.value : Number(data?.value);
-        return { date, value };
-        });
-        setWeights(items);
-      });
+        if (!userError && userData) {
+          const avatarId = userData.avatar_id || userData.photo_url;
+          if (avatarId) {
+            setSelectedAvatarId(avatarId);
+            setAvatarSource(getAvatarSourceById(avatarId));
+          }
+        }
+      } catch (e) {
+        console.error("Error loading user profile:", e);
+      }
+
+      // Load weights
+      try {
+        const { data: weightsData } = await supabase
+          .from("weight_entries")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("date", { ascending: false });
+
+        if (weightsData) {
+          const items = weightsData.map((w: any) => ({
+            date: new Date(w.date),
+            value: Number(w.value),
+          }));
+          setWeights(items);
+        }
+      } catch (e) {
+        console.error("Error loading weights:", e);
+      }
+    };
+
+    loadData();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      loadData();
     });
-    return () => { unsubAuth(); if (unsubWeights) unsubWeights(); };
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const openAvatarPicker = () => setAvatarSheetVisible(true);
 
   async function handleSelectAvatar(id: string) {
-    const user = auth.currentUser;
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) { Alert.alert("Session requise", "Veuillez vous reconnecter."); return; }
     setSavingAvatar(true);
     try {
-      await setDoc(doc(db, "Users", user.uid), { avatarId: id }, { merge: true });
+      const { error } = await supabase
+        .from("users")
+        .update({ avatar_id: id, photo_url: id })
+        .eq("id", user.id);
+      
+      if (error) {
+        console.error("Avatar update error:", error);
+        throw error;
+      }
+      
       setSelectedAvatarId(id);
-      setAvatarSource(getAvatarSourceById(id)); // preview immédiat
+      setAvatarSource(getAvatarSourceById(id));
       setAvatarSheetVisible(false);
+      Alert.alert("Succès", "Photo mise à jour !");
     } catch (e: any) {
+      console.error("Avatar error:", e);
       Alert.alert("Erreur", e?.message ?? "Impossible de mettre à jour l'avatar.");
     } finally { setSavingAvatar(false); }
   }
 
   const addWeight = async () => {
-    const user = auth.currentUser;
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) { Alert.alert("Session requise", "Veuillez vous reconnecter."); return; }
     const value = parseFloat(newWeight);
     if (Number.isNaN(value)) { Alert.alert("Erreur", "Veuillez entrer un poids valide."); return; }
-    try { await addDoc(collection(db, "Poids", user.uid, "entries"), { value, date: new Date() }); setNewWeight(""); }
-    catch { Alert.alert("Erreur", "Impossible d'ajouter le poids."); }
+    try {
+      const { error } = await supabase
+        .from("weight_entries")
+        .insert({ user_id: user.id, value, date: new Date().toISOString() });
+      
+      if (error) {
+        console.error("Weight insert error:", error);
+        throw error;
+      }
+      
+      setNewWeight("");
+      Alert.alert("Succès", "Poids ajouté !");
+      
+      // Reload weights
+      const { data: weightsData } = await supabase
+        .from("weight_entries")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("date", { ascending: false });
+      
+      if (weightsData) {
+        setWeights(weightsData.map((w: any) => ({
+          date: new Date(w.date),
+          value: Number(w.value),
+        })));
+      }
+    } catch (e: any) { 
+      console.error("Weight error:", e);
+      Alert.alert("Erreur", e?.message ?? "Impossible d'ajouter le poids."); 
+    }
   };
 
   const save = async () => {
-    const user = auth.currentUser;
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) { Alert.alert("Session requise", "Veuillez vous reconnecter."); return; }
     try {
       setSaving(true);
-      await setDoc(
-        doc(db, "Performances", user.uid),
-        { squat: squat ? Number(squat) : null, bench: bench ? Number(bench) : null, deadlift: deadlift ? Number(deadlift) : null, running, hyrox },
-        { merge: true }
-      );
+      const { error } = await supabase
+        .from("performances")
+        .upsert({
+          user_id: user.id,
+          squat: squat ? Number(squat) : null,
+          bench: bench ? Number(bench) : null,
+          deadlift: deadlift ? Number(deadlift) : null,
+          running,
+          hyrox,
+        }, {
+          onConflict: 'user_id'
+        });
+      
+      if (error) {
+        console.error("Performance save error:", error);
+        throw error;
+      }
+      
       Alert.alert("Données mises à jour.");
       router.push("/user");
-    } catch { Alert.alert("Erreur", "Impossible de sauvegarder."); }
+    } catch (e: any) { 
+      console.error("Save error:", e);
+      Alert.alert("Erreur", e?.message ?? "Impossible de sauvegarder."); 
+    }
     finally { setSaving(false); }
   };
 

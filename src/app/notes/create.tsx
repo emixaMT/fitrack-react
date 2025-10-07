@@ -10,8 +10,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { auth, db } from '../../../config/firebaseConfig';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../../../config/supabaseConfig';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 
@@ -22,17 +21,20 @@ export default function CreateNote() {
 
   const saveNote = async () => {
     if (!content.trim()) return;
-    const user = auth.currentUser;
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
 
     try {
       setSaving(true);
-      await addDoc(collection(db, 'Notes'), {
+      const { error } = await supabase.from('notes').insert({
         content: content.trim(),
-        id_user: user.uid,
-        createdAt: serverTimestamp(),
+        id_user: session.user.id,
+        created_at: new Date().toISOString(),
       });
-      router.push('/note'); // ✅ Corrigé : c'était "/note"
+      
+      if (error) throw error;
+      
+      router.push('/note');
     } catch (e) {
       console.error(e);
       Alert.alert('Erreur', "Impossible d'enregistrer la note.");

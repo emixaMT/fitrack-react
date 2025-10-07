@@ -6,8 +6,7 @@ import { AppState, Platform } from "react-native";
 import { useEffect } from "react";
 import React from "react";
 
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../../config/firebaseConfig"; // adapte si chemin différent
+import { supabase } from "../../config/supabaseConfig";
 
 
 async function registerForPushNotificationsAsync() {
@@ -45,14 +44,19 @@ export default function Layout() {
     registerForPushNotificationsAsync();
 
     // Auth listener ✅
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        // si pas connecté, renvoyer à la page login
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
         router.replace("/");
       }
     });
 
-    return unsub;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        router.replace("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   return <Slot />;

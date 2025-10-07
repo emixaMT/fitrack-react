@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { View, Text, ScrollView, ActivityIndicator, Image, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { db } from "../../../config/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
+import { supabase } from "../../../config/supabaseConfig";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { sportsMeta } from "../../../constantes/sport";
 import React from "react";
@@ -46,13 +45,25 @@ export default function SeanceDetail() {
     if (!id) return;
     (async () => {
       try {
-        const ref = doc(db, "Seances", String(id));
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
+        const { data, error } = await supabase
+          .from('seances')
+          .select('*')
+          .eq('id', String(id))
+          .single();
+
+        if (error || !data) {
+          console.error('Error loading seance:', error);
           router.back();
           return;
         }
-        setSeance({ id: snap.id, ...(snap.data() as Omit<Seance, "id">) });
+
+        setSeance({
+          id: data.id,
+          nom: data.nom,
+          category: data.category,
+          objectifs: data.objectifs,
+          exercices: data.exercices,
+        });
       } catch (e) {
         console.error(e);
       } finally {

@@ -2,9 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Dimensions, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '../config/firebaseConfig';
+import { supabase } from '../config/supabaseConfig';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -32,51 +30,87 @@ export default function LastSeancesSlider() {
   const [seances, setSeances] = useState<Seance[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Fonction de chargement des séances (réutilisable)
+  const loadSeancesData = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('seances')
+      .select('*')
+      .eq('id_user', userId)
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    if (error) {
+      console.error('Error loading seances:', error);
+      setSeances([]);
+      setLoading(false);
+      return;
+    }
+
+    const items: Seance[] = (data || []).map((d: any) => ({
+      id: d.id,
+      nom: d.nom ?? 'Sans titre',
+      category: d.category,
+    }));
+    setSeances(items);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    let unsubFS: undefined | (() => void);
+    let realtimeChannel: any;
 
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
-      // stop previous FS listener if user changes
-      if (unsubFS) {
-        unsubFS();
-        unsubFS = undefined;
-      }
+    const setupRealtime = async (userId: string) => {
+      // Charger initialement
+      await loadSeancesData(userId);
 
-      if (!user) {
+      // Souscrire aux changements en temps réel
+      realtimeChannel = supabase
+        .channel(`last-seances-slider-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'seances',
+            filter: `id_user=eq.${userId}`,
+          },
+          async (payload) => {
+            console.log('🔄 [ManualSlider] Realtime update:', payload.eventType);
+            await loadSeancesData(userId);
+          }
+        )
+        .subscribe();
+    };
+
+    // Écouter les changements d'authentification
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setupRealtime(session.user.id);
+      } else {
         setSeances([]);
         setLoading(false);
-        return;
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+        realtimeChannel = null;
       }
 
-      // Dernières 6 séances de l'utilisateur (nécessite peut-être un index composite)
-      const q = query(
-        collection(db, 'Seances'),
-        where('id_user', '==', user.uid),
-        orderBy('createdAt', 'desc'),
-        limit(6)
-      );
-
-      unsubFS = onSnapshot(
-        q,
-        (snap) => {
-          const items: Seance[] = snap.docs.map((d) => {
-            const data = d.data() as any;
-            return {
-              id: d.id,
-              nom: data?.nom ?? 'Sans titre',
-              category: data?.category,
-            };
-          });
-          setSeances(items);
-          setLoading(false);
-        },
-        () => setLoading(false)
-      );
+      if (session?.user) {
+        setLoading(true);
+        setupRealtime(session.user.id);
+      } else {
+        setSeances([]);
+        setLoading(false);
+      }
     });
 
     return () => {
-      unsubAuth();
-      if (unsubFS) unsubFS();
+      subscription.unsubscribe();
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
   }, []);
 

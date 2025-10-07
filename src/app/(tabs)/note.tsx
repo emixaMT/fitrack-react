@@ -11,16 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { auth, db } from "../../../config/firebaseConfig";
-import {
-  collection,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
+import { supabase } from "../../../config/supabaseConfig";
 import React from "react";
 
 type Note = {
@@ -39,25 +30,90 @@ export default function NotesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
+    let realtimeChannel: any;
 
-    const q = query(
-      collection(db, "Notes"),
-      where("id_user", "==", user.uid),
-      orderBy("createdAt", "desc")
-    );
+    const loadNotes = async (userId: string) => {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('id_user', userId)
+        .order('created_at', { ascending: false });
 
-    const unsub = onSnapshot(q, (snap) => {
-      const items = snap.docs.map((d) => ({
+      if (error) {
+        console.error('Error loading notes:', error);
+        setNotes([]);
+        setLoading(false);
+        return;
+      }
+
+      const items = (data || []).map((d: any) => ({
         id: d.id,
-        ...(d.data() as Omit<Note, "id">),
+        content: d.content,
+        createdAt: d.created_at,
+        id_user: d.id_user,
       }));
       setNotes(items);
       setLoading(false);
+
+      // Realtime subscription
+      realtimeChannel = supabase
+        .channel(`notes-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'notes',
+            filter: `id_user=eq.${userId}`,
+          },
+          async () => {
+            const { data: updatedData } = await supabase
+              .from('notes')
+              .select('*')
+              .eq('id_user', userId)
+              .order('created_at', { ascending: false });
+
+            if (updatedData) {
+              const items = updatedData.map((d: any) => ({
+                id: d.id,
+                content: d.content,
+                createdAt: d.created_at,
+                id_user: d.id_user,
+              }));
+              setNotes(items);
+            }
+          }
+        )
+        .subscribe();
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadNotes(session.user.id);
+      }
     });
 
-    return unsub;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
+
+      if (session?.user) {
+        setLoading(true);
+        loadNotes(session.user.id);
+      } else {
+        setNotes([]);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
+    };
   }, []);
 
   const formatDate = (ts?: any) => {
@@ -88,7 +144,8 @@ export default function NotesScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteDoc(doc(db, "Notes", noteId));
+            const { error } = await supabase.from('notes').delete().eq('id', noteId);
+            if (error) throw error;
           } catch (e) {
             Alert.alert("Erreur", "Impossible de supprimer la note.");
           }

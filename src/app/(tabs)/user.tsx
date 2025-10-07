@@ -4,9 +4,7 @@ import { Image, Pressable, View, Text, ScrollView, ActivityIndicator } from 'rea
 import { router, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { auth, db } from '../../../config/firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot, getDoc } from 'firebase/firestore';
+import { supabase } from '../../../config/supabaseConfig';
 import { getUserProfile } from '../../../services/userService'; // <-- adapte le chemin si besoin
 import WeightChart from 'components/weightChart';
 import HeaderAvatar, { HeroAvatar } from '../../../components/HeaderAvatar';
@@ -27,24 +25,45 @@ export default function UserScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let unsubProfile: undefined | (() => void);
-
-    const unsubAuth = onAuthStateChanged(auth, async (user) => {
-      if (!user) return; // garde ton guard ailleurs (layout)
-
-      const profile = await getUserProfile(user.uid);
-      const fallback = user.displayName ?? user.email?.split('@')[0] ?? '';
+    const loadUserData = async (userId: string, userEmail: string | undefined) => {
+      const profile = await getUserProfile(userId);
+      const fallback = userEmail?.split('@')[0] ?? '';
       setUserName(typeof profile?.name === 'string' && profile.name.trim() ? profile.name : fallback);
 
-      // 🔵 PERFS one-shot
-      const perfSnap = await getDoc(doc(db, 'Performances', user.uid));
-      if (perfSnap.exists()) setPerfs(perfSnap.data() as Performances);
+      // Charger les performances
+      const { data: perfData } = await supabase
+        .from('performances')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (perfData) {
+        setPerfs({
+          squat: perfData.squat,
+          bench: perfData.bench,
+          deadlift: perfData.deadlift,
+          running: perfData.running,
+          hyrox: perfData.hyrox,
+        });
+      }
       setLoading(false);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadUserData(session.user.id, session.user.email);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setLoading(true);
+        loadUserData(session.user.id, session.user.email);
+      }
     });
 
     return () => {
-      unsubAuth();
-      if (unsubProfile) unsubProfile();
+      subscription.unsubscribe();
     };
   }, []);
 

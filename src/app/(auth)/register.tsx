@@ -1,9 +1,8 @@
 // app/register.tsx
 import { useState } from "react";
 import { View, TextInput, Text, Pressable, Alert } from "react-native";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../../../config/firebaseConfig";
-import { doc, setDoc } from "firebase/firestore";
+import { supabase } from "../../../config/supabaseConfig";
+import { register } from "../../../services/supabaseAuth";
 import React from "react";
 
 export default function RegisterScreen() {
@@ -12,14 +11,23 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await register(email, password);
       const user = userCredential.user;
 
-      // ✅ Créer un document Firestore lié à l'user
-      await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        createdAt: new Date(),
-      });
+      // ✅ Créer un profil utilisateur dans Supabase
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: user.uid,
+          email: user.email,
+          is_active: true,
+          status: 'active',
+        });
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        Alert.alert("Attention", "Compte créé mais profil non sauvegardé: " + profileError.message);
+      }
 
       Alert.alert("Succès", "Utilisateur créé !");
     } catch (error: any) {

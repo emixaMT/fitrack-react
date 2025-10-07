@@ -12,17 +12,11 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { auth, db } from "../../../../config/firebaseConfig";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-} from "firebase/firestore";
+import { supabase } from "../../../../config/supabaseConfig";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
 type Seance = { nom: string; id_user: string; exercices: Exercice[] };
-
 export default function EditSeanceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -35,10 +29,10 @@ export default function EditSeanceScreen() {
 
   // ---------- Auth guard ----------
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged((user) => {
-      if (!user) router.replace("/");
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) router.replace("/");
     });
-    return unsub;
+    return () => subscription.unsubscribe();
   }, [router]);
 
   // ---------- Fetch doc ----------
@@ -46,20 +40,23 @@ export default function EditSeanceScreen() {
     let mounted = true;
     const load = async () => {
       try {
-        const ref = doc(db, "Seances", String(id));
-        const snap = await getDoc(ref);
-        if (!snap.exists()) {
+        const { data, error } = await supabase
+          .from("seances")
+          .select("*")
+          .eq("id", String(id))
+          .single();
+
+        if (error || !data) {
           Alert.alert("Introuvable", "Cette séance n'existe pas.");
           router.back();
           return;
         }
-        const data = snap.data() as Seance;
         if (!mounted) return;
 
         setNom(data.nom ?? "");
         setExercices(
           Array.isArray(data.exercices) && data.exercices.length
-            ? data.exercices.map((e) => ({
+            ? data.exercices.map((e: any) => ({
                 nom: e.nom ?? "",
                 series: e.series ?? null,
                 reps: e.reps ?? null,
@@ -122,7 +119,6 @@ export default function EditSeanceScreen() {
     }
     try {
       setSaving(true);
-      const ref = doc(db, "Seances", String(id));
 
       const cleaned = exercices.map((e) => ({
         nom: e.nom.trim(),
@@ -131,11 +127,14 @@ export default function EditSeanceScreen() {
         ...(e.charge != null ? { charge: e.charge } : {}),
       }));
 
-      await updateDoc(ref, { nom: nom.trim(), exercices: cleaned });
+      const { error } = await supabase
+        .from("seances")
+        .update({ nom: nom.trim(), exercices: cleaned })
+        .eq("id", String(id));
 
-      Alert.alert("Sauvegardé ✅", "La séance a été mise à jour.", [
-        { text: "Ok", onPress: () => router.back() },
-      ]);
+      if (error) throw error;
+
+      router.back();
     } catch (e) {
       console.error(e);
       Alert.alert("Erreur", "Impossible d'enregistrer les modifications.");

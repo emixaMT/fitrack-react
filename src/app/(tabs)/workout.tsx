@@ -1,18 +1,7 @@
 // FILE: src/app/(tabs)/workout.tsx
 import React, { useEffect, useState } from "react";
 import { useRouter, useNavigation } from "expo-router";
-import { auth, db } from "../../../config/firebaseConfig";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  addDoc,
-  deleteDoc,
-  doc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { supabase } from "../../../config/supabaseConfig";
 import {
   View,
   Text,
@@ -47,48 +36,96 @@ export default function WorkoutScreen() {
   const [loading, setLoading] = useState(true);
   const [modalVisible] = useState(false);
 
-  // 🔒 Auth + abonnement Firestore (API modulaire)
   useEffect(() => {
-    let unsubFS: undefined | (() => void);
+    let realtimeChannel: any;
 
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
-      if (unsubFS) {
-        unsubFS();
-        unsubFS = undefined;
-      }
+    const loadSeances = async (userId: string) => {
+      const { data, error } = await supabase
+        .from('seances')
+        .select('*')
+        .eq('id_user', userId);
 
-      if (!user) {
+      if (error) {
+        console.error('Error loading seances:', error);
         setSeances([]);
         setLoading(false);
-        router.replace("/");
         return;
       }
 
-      setLoading(true);
-      const q = query(collection(db, "Seances"), where("id_user", "==", user.uid));
-      unsubFS = onSnapshot(
-        q,
-        (snap) => {
-          const items: Seance[] = snap.docs.map((d) => {
-            const data = d.data() as any;
-            return {
-              id: d.id,
-              nom: data?.nom ?? "Sans titre",
-              id_user: data?.id_user ?? user.uid,
-              category: data?.category,                       // ⬅️ récupère la catégorie
-              exercices: Array.isArray(data?.exercices) ? data.exercices : [],
-            };
-          });
-          setSeances(items);
-          setLoading(false);
-        },
-        () => setLoading(false)
-      );
+      const items: Seance[] = (data || []).map((d: any) => ({
+        id: d.id,
+        nom: d.nom ?? "Sans titre",
+        id_user: d.id_user ?? userId,
+        category: d.category,
+        exercices: Array.isArray(d.exercices) ? d.exercices : [],
+      }));
+      setSeances(items);
+      setLoading(false);
+
+      // Realtime subscription
+      realtimeChannel = supabase
+        .channel(`workout-seances-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'seances',
+            filter: `id_user=eq.${userId}`,
+          },
+          async (payload) => {
+            console.log('🔄 [Workout] Realtime update:', payload.eventType);
+            const { data: updatedData } = await supabase
+              .from('seances')
+              .select('*')
+              .eq('id_user', userId);
+
+            if (updatedData) {
+              const items: Seance[] = updatedData.map((d: any) => ({
+                id: d.id,
+                nom: d.nom ?? "Sans titre",
+                id_user: d.id_user ?? userId,
+                category: d.category,
+                exercices: Array.isArray(d.exercices) ? d.exercices : [],
+              }));
+              setSeances(items);
+            }
+          }
+        )
+        .subscribe();
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadSeances(session.user.id);
+      } else {
+        setSeances([]);
+        setLoading(false);
+        router.replace("/");
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+      }
+
+      if (session?.user) {
+        setLoading(true);
+        loadSeances(session.user.id);
+      } else {
+        setSeances([]);
+        setLoading(false);
+        router.replace("/");
+      }
     });
 
     return () => {
-      unsubAuth();
-      if (unsubFS) unsubFS();
+      subscription.unsubscribe();
+      if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+      }
     };
   }, [router]);
 
@@ -106,9 +143,28 @@ export default function WorkoutScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteDoc(doc(db, "Seances", seanceId));
-          } catch {
-            Alert.alert("Erreur", "La suppression a échoué.");
+            // Optimistic update: retire immédiatement de la liste
+            setSeances((prev) => prev.filter((s) => s.id !== seanceId));
+            
+            const { error } = await supabase.from('seances').delete().eq('id', seanceId);
+            if (error) throw error;
+                      } catch (e) {
+            console.error("Delete error:", e);
+            // Recharger en cas d'erreur
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              const { data } = await supabase.from('seances').select('*').eq('id_user', session.user.id);
+              if (data) {
+                const items: Seance[] = data.map((d: any) => ({
+                  id: d.id,
+                  nom: d.nom ?? "Sans titre",
+                  id_user: d.id_user ?? session.user.id,
+                  category: d.category,
+                  exercices: Array.isArray(d.exercices) ? d.exercices : [],
+                }));
+                setSeances(items);
+              }
+            }
           }
         },
       },
@@ -147,20 +203,20 @@ export default function WorkoutScreen() {
     category: string;
     exercices: any[];
   }) {
-    // Why: éviter d'écrire sans session active
-    const user = auth.currentUser;
-    if (!user) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
       Alert.alert("Session requise", "Veuillez vous reconnecter.");
       return;
     }
     try {
-      await addDoc(collection(db, "Seances"), {
+      const { error } = await supabase.from('seances').insert({
         nom,
         category,
         exercices,
-        id_user: user.uid,
-        createdAt: serverTimestamp(),
+        id_user: session.user.id,
+        created_at: new Date().toISOString(),
       });
+      if (error) throw error;
     } catch {
       Alert.alert("Erreur", "Impossible d'ajouter la séance");
     }

@@ -12,9 +12,8 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { auth, db } from '../../../../config/firebaseConfig';
+import { supabase } from '../../../../config/supabaseConfig';
 import { sportsMeta, SportKey } from '../../../../constantes/sport';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import React from 'react';
 
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
@@ -73,13 +72,15 @@ export default function Step2() {
   };
 
   const onSave = async () => {
-    if (!auth.currentUser) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+    
     try {
       const payload: any = {
         nom: nomSeance.trim(),
         category: sport,
-        id_user: auth.currentUser.uid,
-        createdAt: serverTimestamp(),
+        id_user: session.user.id,
+        created_at: new Date().toISOString(),
       };
 
       if (isForce) {
@@ -99,9 +100,12 @@ export default function Step2() {
         payload.exercices = [];
       }
 
-      await addDoc(collection(db, 'Seances'), payload);
+      const { error } = await supabase.from('seances').insert(payload);
+      
+      if (error) throw error;
 
-      router.replace('/workout');
+      // Redirection vers home pour voir le slider se rafraîchir
+      router.replace('/home');
     } catch (e) {
       console.error(e);
       Alert.alert('Erreur', "Impossible d'enregistrer la séance");

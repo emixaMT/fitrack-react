@@ -2,19 +2,24 @@
 import React, { useEffect } from 'react';
 import { Tabs, useRouter, useRootNavigationState } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../../../config/firebaseConfig';
+import { supabase } from '../../../config/supabaseConfig';
 
 export default function TabsLayout() {
   const router = useRouter();
   const navState = useRootNavigationState();
 
   useEffect(() => {
-    if (!navState?.key) return; 
-    const unsub = onAuthStateChanged(auth, (user) => {
-      if (!user) router.replace('/');
+    if (!navState?.key) return;
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) router.replace('/');
     });
-    return unsub;
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) router.replace('/');
+    });
+    
+    return () => subscription.unsubscribe();
   }, [navState?.key, router]);
 
   if (!navState?.key) return null;
