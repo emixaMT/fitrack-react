@@ -7,6 +7,10 @@ import { useEffect } from "react";
 import React from "react";
 
 import { supabase } from "../../config/supabaseConfig";
+import { BadgeUnlockProvider } from "../../components/badges/BadgeUnlockProvider";
+import { checkAndUnlockBadges } from "../../services/badgeService";
+import { ThemeProvider } from "../../contexts/ThemeContext";
+import { LevelProvider } from "../../contexts/LevelContext";
 
 
 async function registerForPushNotificationsAsync() {
@@ -44,20 +48,66 @@ export default function Layout() {
     registerForPushNotificationsAsync();
 
     // Auth listener ✅
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         router.replace("/");
+      } else {
+        // Vérifier et débloquer les badges au démarrage (avec timeout)
+        console.log('🔍 Vérification des badges au démarrage...');
+        
+        // Créer une promesse avec timeout de 10 secondes
+        const checkWithTimeout = Promise.race([
+          checkAndUnlockBadges(session.user.id),
+          new Promise<[]>((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout: vérification trop longue')), 10000)
+          )
+        ]);
+
+        try {
+          const newBadges = await checkWithTimeout;
+          if (newBadges.length > 0) {
+            console.log(`🎉 ${newBadges.length} nouveau(x) badge(s) débloqué(s) au démarrage !`);
+          } else {
+            console.log('✅ Aucun nouveau badge à débloquer');
+          }
+        } catch (error: any) {
+          if (error.message.includes('Timeout')) {
+            console.warn('⚠️ La vérification des badges a pris trop de temps et a été annulée');
+          } else {
+            console.error('❌ Erreur lors de la vérification des badges:', error);
+          }
+        }
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!session) {
         router.replace("/");
+      } else if (_event === 'SIGNED_IN') {
+        // Vérifier aussi lors de la connexion (en arrière-plan, sans bloquer)
+        console.log('🔍 Vérification des badges après connexion...');
+        checkAndUnlockBadges(session.user.id)
+          .then((badges) => {
+            if (badges.length > 0) {
+              console.log(`🎉 ${badges.length} nouveau(x) badge(s) débloqué(s) !`);
+            }
+          })
+          .catch((error) => {
+            console.error('❌ Erreur lors de la vérification des badges:', error);
+          });
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  return <Slot />;
+  return (
+    <ThemeProvider>
+      <LevelProvider>
+        <BadgeUnlockProvider>
+          <Slot />
+        </BadgeUnlockProvider>
+      </LevelProvider>
+    </ThemeProvider>
+  );
 }

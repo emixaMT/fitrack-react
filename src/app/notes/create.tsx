@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../../config/supabaseConfig';
+import { checkAndUnlockBadges } from '../../../services/badgeService';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
 
@@ -33,6 +34,9 @@ export default function CreateNote() {
       });
       
       if (error) throw error;
+
+      // Vérifier et débloquer les badges automatiquement
+      await checkAndUnlockBadges(session.user.id);
       
       router.push('/note');
     } catch (e) {
@@ -45,13 +49,15 @@ export default function CreateNote() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       className="flex-1 bg-white"
+      style={{ flex: 1 }}
     >
       <SafeAreaView>
         {/* Header simple avec retour */}
         <Pressable
-          onPress={() => router.push('/notes')}
+          onPress={() => router.push('/note')}
           className="p-2 rounded-full bg-gray-100 absolute top-16 left-4"
         >
           <Ionicons name="arrow-back" size={20} color="#111827" />

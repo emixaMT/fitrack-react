@@ -155,8 +155,10 @@ export default function EditSeanceScreen() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       className="flex-1 h-full bg-white"
+      style={{ flex: 1 }}
     >
       <SafeAreaView className="mx-auto flex h-full items-center bg-white flex-col flex-wrap gap-3">
         <View className="w-full flex flex-row items-center mb-4 px-2 mt-6">
@@ -171,7 +173,7 @@ export default function EditSeanceScreen() {
           </Text>
         </View>
 
-        <ScrollView>
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           {/* Nom séance */}
           <View className="my-2 w-full">
             <Text className="text-gray-600 my-2">Nom de la séance</Text>
@@ -228,12 +230,12 @@ export default function EditSeanceScreen() {
                   />
                 </View>
                 <View className="w-[32%]">
-                  <Text className="text-gray-600 mb-1">Charge (kg)</Text>
+                  <Text className="text-gray-600 mb-1">RPE</Text>
                   <TextInput
                     keyboardType="numeric"
                     value={exo.charge?.toString() ?? ""}
                     onChangeText={(t) => updateExo(idx, "charge", t)}
-                    placeholder="ex: 60"
+                    placeholder="ex: 7"
                     className="border border-gray-300 rounded-xl px-3 py-3 bg-gray-50 text-gray-900"
                     placeholderTextColor="#4f46e5"
                   />

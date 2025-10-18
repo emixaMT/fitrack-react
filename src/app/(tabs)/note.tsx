@@ -146,6 +146,19 @@ export default function NotesScreen() {
           try {
             const { error } = await supabase.from('notes').delete().eq('id', noteId);
             if (error) throw error;
+            
+            // Fermer le modal immédiatement
+            closeModal();
+            
+            // Mettre à jour l'état local pour retirer la note supprimée
+            setNotes((prevNotes) => prevNotes.filter((note) => note.id !== noteId));
+            
+            // Appeler checkAndUnlockBadges pour vérifier les badges
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              const { checkAndUnlockBadges } = await import('../../../services/badgeService');
+              await checkAndUnlockBadges(user.id);
+            }
           } catch (e) {
             Alert.alert("Erreur", "Impossible de supprimer la note.");
           }

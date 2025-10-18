@@ -8,11 +8,22 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 
 import { supabase } from '../../../config/supabaseConfig';
+import { checkAndUnlockBadges } from '../../../services/badgeService';
+import { incrementSessionCounter, getMonthlyTotal } from '../../../services/sessionCounterService';
 
 import ProgressBar from '../../../components/progressBar';
 import ManualSlider from 'components/manualSlider';
 import StepCounter from 'components/podo';
 import { HeroAvatar } from 'components/HeaderAvatar';
+import { useStreak } from '../../../hooks/useStreak';
+import { StreakFlame } from '../../../components/StreakFlame';
+import { LevelBadge } from '../../../components/LevelBadge';
+import { getChallengeDetailsForDay, getDayOfYear } from '../../../constants/challengeDetails';
+import { DailyChallengeModal } from '../../../components/DailyChallengeModal';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { useLevel } from '../../../contexts/LevelContext';
+import { SessionTypeModal } from '../../../components/SessionTypeModal';
+import { SportKey } from '../../../constantes/sport';
 
 // ---------- Notifs: utils ----------
 const GOAL_TAG = 'goal-3d';
@@ -90,16 +101,50 @@ const monthKeyNow = () => {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { addXP, level } = useLevel();
 
   const [userName, setUserName] = useState('');
   const [sessions, setSessions] = useState(0);
   const [target, setTarget] = useState(MONTHLY_TARGET_DEFAULT);
   const [progress, setProgress] = useState(0);
   const [monthKey, setMonthKey] = useState(monthKeyNow());
+  const [userId, setUserId] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [challengeCompleted, setChallengeCompleted] = useState(false);
+  const [sessionTypeModalVisible, setSessionTypeModalVisible] = useState(false);
+  
+  const { streakDays = 0 } = useStreak(userId) || {};
+  const { colors } = useTheme();
 
   useEffect(() => {
     setProgress(target > 0 ? Math.min(sessions / target, 1) : 0);
   }, [sessions, target]);
+
+  // Vérifier si le défi du jour est déjà complété
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkChallengeCompleted = async () => {
+      const dayOfYear = getDayOfYear();
+      const currentYear = new Date().getFullYear();
+
+      const { data, error } = await supabase
+        .from('completed_challenges')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('day_of_year', dayOfYear)
+        .eq('year', currentYear)
+        .maybeSingle();
+
+      if (!error && data) {
+        setChallengeCompleted(true);
+      } else {
+        setChallengeCompleted(false);
+      }
+    };
+
+    checkChallengeCompleted();
+  }, [userId]);
 
   // Auth + init doc + reset mensuel + sync en live
   useEffect(() => {
@@ -107,6 +152,9 @@ export default function HomeScreen() {
 
     const setupUser = async (userId: string, userEmail: string | undefined) => {
       const currentKey = monthKeyNow();
+      
+      // Mettre à jour le userId pour les hooks
+      setUserId(userId);
 
       // Récupérer ou créer l'utilisateur
       const { data: existingUser, error: fetchError } = await supabase
@@ -186,6 +234,7 @@ export default function HomeScreen() {
         setupUser(session.user.id, session.user.email);
       } else {
         cancelGoalReminders().catch(() => void 0);
+        setUserId(null);
         setUserName('');
         setSessions(0);
         setTarget(MONTHLY_TARGET_DEFAULT);
@@ -199,6 +248,7 @@ export default function HomeScreen() {
         setupUser(session.user.id, session.user.email);
       } else {
         cancelGoalReminders().catch(() => void 0);
+        setUserId(null);
         setUserName('');
         setSessions(0);
         setTarget(MONTHLY_TARGET_DEFAULT);
@@ -237,24 +287,37 @@ export default function HomeScreen() {
     })().catch(() => void 0);
   }, [completed, monthKey]);
 
-  // +1 séance (persistant + reset auto)
-  async function handleAddSession() {
+  // Ouvrir le modal de sélection du type de séance
+  const handleAddSession = () => {
+    // Ouvrir la modal pour sélectionner le type de séance
+    setSessionTypeModalVisible(true);
+  };
+
+  // Créer une séance avec le type sélectionné
+  async function handleCreateSession(category: SportKey) {
+    console.log('🚀 handleCreateSession: START with category:', category);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
       Alert.alert('Session requise', 'Veuillez vous reconnecter.');
       return;
     }
+    console.log('✅ User authenticated:', session.user.id);
     const currentKey = monthKeyNow();
 
     try {
       // Récupérer les données actuelles
+      console.log('📊 Fetching user data...');
       const { data: userData, error: fetchError } = await supabase
         .from('users')
         .select('*')
         .eq('id', session.user.id)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('❌ Error fetching user:', fetchError);
+        throw fetchError;
+      }
+      console.log('✅ User data fetched:', { monthly_sessions: userData?.monthly_sessions });
 
       const prevKey = userData?.month_key;
       const prev = userData?.monthly_sessions ?? 0;
@@ -269,8 +332,9 @@ export default function HomeScreen() {
       }
 
       // Mettre à jour dans la base
+      console.log('💾 Updating monthly_sessions...');
       if (prevKey !== currentKey) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('users')
           .update({
             month_key: currentKey,
@@ -278,14 +342,65 @@ export default function HomeScreen() {
             monthly_target: tgt,
           })
           .eq('id', session.user.id);
+        if (updateError) {
+          console.error('❌ Error updating user (new month):', updateError);
+          throw updateError;
+        }
       } else {
-        await supabase
+        const { error: updateError } = await supabase
           .from('users')
           .update({
             monthly_sessions: prev + 1,
           })
           .eq('id', session.user.id);
+        if (updateError) {
+          console.error('❌ Error updating user:', updateError);
+          throw updateError;
+        }
       }
+      console.log('✅ monthly_sessions updated successfully');
+      
+      // Incrémenter le compteur pour ce type de séance
+      console.log('💪 Incrementing session counter for category:', category);
+      const newCount = await incrementSessionCounter(session.user.id, category);
+      console.log(`✅ Counter incremented to ${newCount} for ${category}`);
+      
+      // Vérifier et débloquer les badges
+      console.log('🏆 Checking for badge unlocks...');
+      try {
+        await checkAndUnlockBadges(session.user.id);
+        console.log('✅ Badge check completed');
+      } catch (badgeError) {
+        console.error('❌ Error checking badges:', badgeError);
+        // Ne pas bloquer si les badges échouent
+      }
+      
+      // Enregistrer la date du jour dans streak_history (INSERT OR IGNORE grâce à UNIQUE)
+      console.log('🔥 Inserting into streak_history...');
+      const today = new Date().toISOString().split('T')[0]; // Format YYYY-MM-DD
+      console.log('📅 Today date:', today, 'User ID:', session.user.id);
+      
+      const { data: streakData, error: streakError } = await supabase
+        .from('streak_history')
+        .insert({ 
+          user_id: session.user.id, 
+          date: today 
+        });
+      
+      if (streakError) {
+        // Code 23505 = violation de contrainte UNIQUE (date déjà enregistrée aujourd'hui)
+        if (streakError.code === '23505') {
+          console.log('ℹ️ Date already recorded for today (expected behavior)');
+        } else {
+          console.error('❌ Streak history error:', JSON.stringify(streakError, null, 2));
+          console.error('❌ Error details:', streakError.message, streakError.details, streakError.hint);
+        }
+        // Ne pas bloquer l'incrémentation si streak_history échoue
+      } else {
+        console.log('✅ Streak history inserted for date:', today);
+        console.log('✅ Streak data returned:', streakData);
+      }
+      
       // Si la cible est atteinte, l'effet [completed] arrêtera les rappels
     } catch (e: any) {
       console.error("Add session error:", e);
@@ -300,6 +415,63 @@ export default function HomeScreen() {
         setSessions(userData.monthly_sessions ?? 0);
         setMonthKey(userData.month_key ?? currentKey);
       }
+    }
+  }
+
+  // Compléter le défi du jour
+  async function handleCompleteChallenge() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      Alert.alert('Session requise', 'Veuillez vous reconnecter.');
+      return;
+    }
+
+    try {
+      const dayOfYear = getDayOfYear();
+      const challengeDetails = getChallengeDetailsForDay(dayOfYear);
+      const challenge = challengeDetails?.titre || 'Défi du jour';
+      const currentYear = new Date().getFullYear();
+
+      const { error } = await supabase
+        .from('completed_challenges')
+        .insert({
+          user_id: session.user.id,
+          day_of_year: dayOfYear,
+          year: currentYear,
+          challenge_text: challenge,
+        });
+
+      if (error) {
+        // Code 23505 = déjà complété (contrainte UNIQUE)
+        if (error.code === '23505') {
+          console.log('ℹ️ Défi déjà complété aujourd\'hui');
+        } else {
+          console.error('❌ Error completing challenge:', error);
+          Alert.alert('Erreur', 'Impossible d\'enregistrer le défi');
+          return;
+        }
+      } else {
+        // Ajouter de l'XP pour le défi complété (20 XP par défaut)
+        const xpResult = await addXP();
+        if (xpResult?.leveledUp) {
+          const newLevel = xpResult.oldLevel + 1;
+          console.log(`🎊 Level Up! Niveau ${xpResult.oldLevel} → ${newLevel}`);
+          Alert.alert(
+            'Félicitations ! 🎊',
+            `Tu as atteint le niveau ${newLevel} !\n+20 XP pour le défi complété`,
+            [{ text: 'Super !' }]
+          );
+        } else {
+          Alert.alert('Bravo ! 🎉', 'Défi relevé avec succès !\n+20 XP', [{ text: 'OK' }]);
+        }
+      }
+
+      setChallengeCompleted(true);
+      setModalVisible(false);
+      console.log('✅ Défi complété:', challenge);
+    } catch (e: any) {
+      console.error('Error completing challenge:', e);
+      Alert.alert('Erreur', e?.message ?? 'Impossible d\'enregistrer le défi');
     }
   }
 
@@ -322,53 +494,111 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView className="flex h-full relative bg-white">
+    <ScrollView style={{ flex: 1, position: 'relative', backgroundColor: colors.background }}>
       {/* Bandeau */}
       <View>
         <LinearGradient
           colors={['#818cf8', '#4f46e5']}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 200, zIndex: 0 }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 168, zIndex: 0 }}
         />
       </View>
 
       {/* Avatar (hero) */}
       <HeroAvatar />
+      
+      {/* Streak Badge - Gauche */}
+      <View className="absolute top-24 left-6">
+        <StreakFlame streakDays={streakDays} size="medium" />
+      </View>
+      
+      {/* Level Badge - Droite */}
+      <View className="absolute top-24 right-6">
+        <LevelBadge level={level} size="large" />
+      </View>
 
-      <View className="flex h-full flex-1 pt-12 px-6 bg-white mt-48">
-        <Text className="text-xl font-semibold text-indigo-700 mb-2 text-center">
-          Bonjour !
-        </Text>
+      <View style={{ flex: 1, paddingTop: 48, paddingHorizontal: 24, backgroundColor: colors.background, marginTop: 192 }}>
 
-        <Pressable
-          onPress={() => router.push('/seances/create/step1')}
-          className="mt-6 py-6 px-6 bg-indigo-600 rounded-lg shadow-lg flex flex-row items-center justify-center gap-2"
-        >
-          <Ionicons name="stopwatch-outline" size={46} color="white" />
-          <Text className="text-2xl font-bold text-center text-white">Créer une séance</Text>
+        {/* Défi du jour */}
+        <Pressable onPress={() => setModalVisible(true)} className="mt-6 rounded-xl shadow-lg overflow-hidden active:opacity-90">
+          <LinearGradient
+            colors={['#4f46e5', '#7c3aed']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={{ padding: 24 }}
+          >
+            <View className="flex-row items-center justify-between mb-3">
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="trophy" size={24} color="#FFD700" />
+                <Text className="text-lg font-bold text-white">Défi du jour</Text>
+              </View>
+              <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 9999 }}>
+                <Text className="text-white font-semibold text-xs">Jour {getDayOfYear()}/365</Text>
+              </View>
+            </View>
+            <Text className="text-2xl font-bold text-white text-center mb-2">
+              {getChallengeDetailsForDay(getDayOfYear())?.titre || 'Défi du jour'}
+            </Text>
+            {challengeCompleted && (
+              <View className="mt-3 py-2 bg-green-600 rounded-lg flex-row items-center justify-center gap-1">
+                <Ionicons name="checkmark-circle" size={20} color="white" />
+                <Text className="text-white font-bold">Défi relevé !</Text>
+              </View>
+            )}
+            {!challengeCompleted && (
+              <View className="mt-3 py-2 bg-white/20 rounded-lg">
+                <Text className="text-white font-semibold text-center">Toucher pour voir les détails →</Text>
+              </View>
+            )}
+          </LinearGradient>
         </Pressable>
 
-        <View className="flex flex-col items-center justify-center mt-12">
-          <Text className="text-lg text-indigo-600">Objectifs de séance dans le mois</Text>
-          <Text className="text-2xl font-bold text-indigo-600 mb-4">
-            {sessions}/{target}
-          </Text>
-          <ProgressBar progress={progress} completed={completed} />
+        <View className="flex-row mt-12 items-start">
+          {/* Bloc Objectif de séance */}
+          <View className="flex-1 flex-col items-center pr-4">
+            <Text style={{ fontSize: 18, color: colors.indigo, textAlign: 'center' }}>Objectif de séance par mois</Text>
+            <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.indigo, marginBottom: 16, textAlign: 'center' }}>
+              {sessions}/{target}
+            </Text>
+            <ProgressBar progress={progress} completed={completed} />
 
-          <View className="flex-row gap-3 mt-4">
-            <Pressable onPress={handleAddSession} className="px-5 py-3 rounded-xl bg-indigo-600 active:opacity-90">
-              <Text className="text-white font-semibold">+1 séance</Text>
-            </Pressable>
+            <View className="flex-row gap-3 mt-4">
+              <Pressable onPress={handleAddSession} className="px-5 py-3 rounded-xl bg-indigo-600 active:opacity-90">
+                <Text className="text-white font-semibold">+1 séance</Text>
+              </Pressable>
+            </View>
+          </View>
 
+          {/* Séparateur vertical */}
+          <View className="w-px bg-gray-300 self-stretch mx-2" />
+
+          {/* StepCounter */}
+          <View className="flex-1 pl-4">
+            <StepCounter />
           </View>
         </View>
 
-        <StepCounter />
-
         <View>
-          <Text className="text-2xl font-bold text-indigo-600 mt-6">Tes dernières séances</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.indigo, marginTop: 24 }}>Tes dernières séances</Text>
           <ManualSlider />
         </View>
       </View>
+
+      {/* Modal du défi */}
+      <DailyChallengeModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        challenge={getChallengeDetailsForDay(getDayOfYear())?.titre || 'Défi du jour'}
+        dayOfYear={getDayOfYear()}
+        onComplete={handleCompleteChallenge}
+        isCompleted={challengeCompleted}
+      />
+
+      {/* Modal de sélection du type de séance */}
+      <SessionTypeModal
+        visible={sessionTypeModalVisible}
+        onSelect={handleCreateSession}
+        onClose={() => setSessionTypeModalVisible(false)}
+      />
     </ScrollView>
   );
 }

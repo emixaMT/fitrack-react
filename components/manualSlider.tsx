@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, Dimensions, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../config/supabaseConfig';
+import { useTheme } from '../contexts/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -29,6 +30,7 @@ export default function LastSeancesSlider() {
   const router = useRouter();
   const [seances, setSeances] = useState<Seance[]>([]);
   const [loading, setLoading] = useState(true);
+  const { colors } = useTheme();
 
   // Fonction de chargement des séances (réutilisable)
   const loadSeancesData = async (userId: string) => {
@@ -138,10 +140,13 @@ export default function LastSeancesSlider() {
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push(`/seances/${item.id}`)}
-              className="bg-white rounded-lg justify-center items-center"
               style={{
                 width: screenWidth / 3,
                 height: 150,
+                backgroundColor: colors.card,
+                borderRadius: 8,
+                justifyContent: 'center',
+                alignItems: 'center',
                 shadowColor: '#4f46e5',
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.3,
@@ -150,7 +155,7 @@ export default function LastSeancesSlider() {
               }}
             >
               <Image source={getCategoryImage(item.category)} className="w-24 h-24" />
-              <Text className="text-indigo-600 text-lg font-bold" numberOfLines={1}>
+              <Text style={{ color: colors.indigo, fontSize: 18, fontWeight: 'bold' }} numberOfLines={1}>
                 {item.nom}
               </Text>
             </Pressable>

@@ -28,7 +28,8 @@
       "package": "com.maximethonneau.fitrack",
       "permissions": [
         "ACTIVITY_RECOGNITION"
-      ]
+      ],
+      "softwareKeyboardLayoutMode": "pan"
     },
     "ios": {
       "bundleIdentifier": "com.maximethonneau.fitrack",

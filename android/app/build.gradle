@@ -104,15 +104,24 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Utilise les variables définies dans android/gradle.properties
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)        // ex: my-release-key.keystore
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD      // mot de passe du keystore
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS                // alias de la clé
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD          // mot de passe de l’alias
+            }
+        }
     }
+
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
+
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
@@ -121,6 +130,7 @@ android {
             crunchPngs enablePngCrunchInRelease.toBoolean()
         }
     }
+
     packagingOptions {
         jniLibs {
             def enableLegacyPackaging = findProperty('expo.useLegacyPackaging') ?: 'false'

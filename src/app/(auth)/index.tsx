@@ -114,15 +114,20 @@ export default function LoginScreen() {
   }
 
   return (
-    <View className="flex-1 justify-center p-4 bg-white">
-      <Image
-        source={require('../../assets/logo.png')}
-        className="w-24 h-24 mx-auto mb-6"
-        resizeMode="contain"
-      />
-      <Text className="text-indigo-600 text-2xl font-bold mb-6 text-center">Connexion</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      className="flex-1 bg-white"
+      style={{ flex: 1 }}
+    >
+      <View className="flex-1 justify-center p-4 bg-white">
+        <Image
+          source={require('../../assets/logo.png')}
+          className="w-24 h-24 mx-auto mb-6"
+          resizeMode="contain"
+        />
+        <Text className="text-indigo-600 text-2xl font-bold mb-6 text-center">Connexion</Text>
 
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <TextInput
           placeholder="Email"
           placeholderTextColor="#888"
@@ -144,25 +149,25 @@ export default function LoginScreen() {
           autoComplete="password"
           textContentType="password"
         />
-      </KeyboardAvoidingView>
 
-      <View className="flex flex-col gap-4">
-        <Pressable
-          className="flex mx-auto justify-center bg-indigo-600 py-4 px-6 rounded-lg opacity-100"
-          onPress={handleLogin}
-          disabled={submitting}
-        >
-          <Text className="text-white">{submitting ? 'Connexion…' : 'Se connecter'}</Text>
-        </Pressable>
+        <View className="flex flex-col gap-4">
+          <Pressable
+            className="flex mx-auto justify-center bg-indigo-600 py-4 px-6 rounded-lg opacity-100"
+            onPress={handleLogin}
+            disabled={submitting}
+          >
+            <Text className="text-white">{submitting ? 'Connexion…' : 'Se connecter'}</Text>
+          </Pressable>
 
-        <Pressable className="flex mx-auto justify-center" onPress={handleBiometricLogin}>
-          <Text className="text-indigo-600">Se connecter avec Face ID / Touch ID</Text>
-        </Pressable>
+          <Pressable className="flex mx-auto justify-center" onPress={handleBiometricLogin}>
+            <Text className="text-indigo-600">Se connecter avec Face ID / Touch ID</Text>
+          </Pressable>
 
-        <Pressable className="flex mx-auto justify-center" onPress={() => router.push('/register')}>
-          <Text className="text-indigo-600">Pas encore inscrit ?</Text>
-        </Pressable>
+          <Pressable className="flex mx-auto justify-center" onPress={() => router.push('/register')}>
+            <Text className="text-indigo-600">Pas encore inscrit ?</Text>
+          </Pressable>
+        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { Image, View, ViewStyle } from "react-native";
 import { useHeaderAvatar } from "../hooks/useHeaderAvatar";
 
-const FALLBACK = require("../src/assets/avatar.png"); // ✅ chemin corrigé
+const FALLBACK = require("../src/assets/fallback.png"); 
 
 type HeaderProps = { size?: number; style?: ViewStyle };
 type HeroProps = { top?: number; size?: number; style?: ViewStyle };

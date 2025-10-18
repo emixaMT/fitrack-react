@@ -1,0 +1,214 @@
+═══════════════════════════════════════════════════════════════════
+  📋 RÉFÉRENCE COMPLÈTE DES NOMS DE FICHIERS BADGES
+═══════════════════════════════════════════════════════════════════
+
+Placez vos images dans: src/assets/badges/
+
+Format: PNG transparent, 512x512px, < 100 KB
+
+
+┌─────────────────────────────────────────────────────────────────┐
+│ BADGES COMMUNS (Gris #9CA3AF)                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+  📄 first_workout.png        → 🎯 Premier Pas
+     "Complétez votre première séance d'entraînement"
+     Points: 10
+
+  📄 note_taker.png           → 📝 Archiviste
+     "Créez votre première note"
+     Points: 10
+
+  📄 weight_tracker.png       → ⚖️ Suivi du Poids
+     "Enregistrez votre poids 10 fois"
+     Points: 25
+
+  📄 monthly_goal.png         → 🎯 Objectif Mensuel
+     "Atteignez votre objectif mensuel"
+     Points: 50
+
+
+┌─────────────────────────────────────────────────────────────────┐
+│ BADGES RARES (Bleu #3B82F6)                                    │
+└─────────────────────────────────────────────────────────────────┘
+
+  📄 workout_10.png           → 💪 Débutant Motivé
+     "Complétez 10 séances d'entraînement"
+     Points: 50
+
+  📄 workout_50.png           → 🏋️ Athlète Régulier
+     "Complétez 50 séances d'entraînement"
+     Points: 100
+
+  📄 early_bird.png           → 🌅 Lève-Tôt
+     "Complétez une séance avant 8h du matin"
+     Points: 25
+
+  📄 heavy_lifter.png         → 🦍 Force Brute
+     "Soulevez plus de 100kg au squat"
+     Points: 100
+
+  📄 bench_king.png           → 👑 Roi du Développé
+     "Soulevez plus de 100kg au développé couché"
+     Points: 100
+
+  📄 note_master.png          → 📚 Maître des Notes
+     "Créez 50 notes"
+     Points: 75
+
+  📄 crossfit_lover.png       → 🏃 Addict CrossFit
+     "Complétez 20 séances de CrossFit"
+     Points: 75
+
+  📄 runner.png               → 🏃‍♂️ Coureur
+     "Complétez 20 séances de running"
+     Points: 75
+
+  📄 cyclist.png              → 🚴 Cycliste
+     "Complétez 20 séances de vélo"
+     Points: 75
+
+  📄 streak_7.png             → 🔥 Semaine Parfaite
+     "Entraînez-vous 7 jours d'affilée"
+     Points: 75
+
+
+┌─────────────────────────────────────────────────────────────────┐
+│ BADGES ÉPIQUES (Violet #A855F7)                                │
+└─────────────────────────────────────────────────────────────────┘
+
+  📄 workout_100.png          → ⭐ Centurion
+     "Complétez 100 séances d'entraînement"
+     Points: 250
+
+  📄 streak_30.png            → 🔥🔥 Un Mois de Fer
+     "Entraînez-vous 30 jours d'affilée"
+     Points: 200
+
+  📄 deadlift_beast.png       → 🦬 Bête de Soulevé
+     "Soulevez plus de 150kg au soulevé de terre"
+     Points: 150
+
+  📄 monthly_goal_3.png       → 🏆 Triple Champion
+     "Atteignez votre objectif mensuel 3 mois de suite"
+     Points: 150
+
+
+┌─────────────────────────────────────────────────────────────────┐
+│ BADGES LÉGENDAIRES (Or #F59E0B)                                │
+└─────────────────────────────────────────────────────────────────┘
+
+  📄 workout_250.png          → 👑 Légende
+     "Complétez 250 séances d'entraînement"
+     Points: 500
+
+
+═══════════════════════════════════════════════════════════════════
+  CHECKLIST DE VÉRIFICATION
+═══════════════════════════════════════════════════════════════════
+
+Avant de déployer, vérifiez que vous avez TOUS ces fichiers :
+
+Communs (4/18):
+  □ first_workout.png
+  □ note_taker.png
+  □ weight_tracker.png
+  □ monthly_goal.png
+
+Rares (10/18):
+  □ workout_10.png
+  □ workout_50.png
+  □ early_bird.png
+  □ heavy_lifter.png
+  □ bench_king.png
+  □ note_master.png
+  □ crossfit_lover.png
+  □ runner.png
+  □ cyclist.png
+  □ streak_7.png
+
+Épiques (4/18):
+  □ workout_100.png
+  □ streak_30.png
+  □ deadlift_beast.png
+  □ monthly_goal_3.png
+
+Légendaires (1/18):
+  □ workout_250.png
+
+TOTAL: 18 fichiers
+
+
+═══════════════════════════════════════════════════════════════════
+  CONSEILS DE DESIGN PAR RARETÉ
+═══════════════════════════════════════════════════════════════════
+
+COMMUN (Gris #9CA3AF)
+  • Style minimaliste et simple
+  • Peu de détails
+  • Couleurs froides et neutres
+  • Exemple: Étoile grise simple
+
+RARE (Bleu #3B82F6)
+  • Plus de détails et de profondeur
+  • Effet de brillance légère
+  • Couleurs bleues vives
+  • Exemple: Trophée bleu avec reflets
+
+ÉPIQUE (Violet #A855F7)
+  • Design élaboré avec effets
+  • Particules ou lueur
+  • Couleurs violettes intenses
+  • Exemple: Couronne avec aura violette
+
+LÉGENDAIRE (Or #F59E0B)
+  • Design spectaculaire
+  • Effet 3D, rayons de lumière
+  • Or brillant avec éclat
+  • Exemple: Couronne d'or rayonnante
+
+
+═══════════════════════════════════════════════════════════════════
+  COMMANDE RAPIDE POUR CRÉER DES PLACEHOLDERS
+═══════════════════════════════════════════════════════════════════
+
+Si vous voulez tester rapidement avec des images de base:
+
+# Créer des placeholders colorés (nécessite ImageMagick)
+
+cd src/assets/badges
+
+# Communs (gris)
+convert -size 512x512 xc:"#9CA3AF" first_workout.png
+convert -size 512x512 xc:"#9CA3AF" note_taker.png
+convert -size 512x512 xc:"#9CA3AF" weight_tracker.png
+convert -size 512x512 xc:"#9CA3AF" monthly_goal.png
+
+# Rares (bleu)
+convert -size 512x512 xc:"#3B82F6" workout_10.png
+convert -size 512x512 xc:"#3B82F6" workout_50.png
+convert -size 512x512 xc:"#3B82F6" early_bird.png
+convert -size 512x512 xc:"#3B82F6" heavy_lifter.png
+convert -size 512x512 xc:"#3B82F6" bench_king.png
+convert -size 512x512 xc:"#3B82F6" note_master.png
+convert -size 512x512 xc:"#3B82F6" crossfit_lover.png
+convert -size 512x512 xc:"#3B82F6" runner.png
+convert -size 512x512 xc:"#3B82F6" cyclist.png
+convert -size 512x512 xc:"#3B82F6" streak_7.png
+
+# Épiques (violet)
+convert -size 512x512 xc:"#A855F7" workout_100.png
+convert -size 512x512 xc:"#A855F7" streak_30.png
+convert -size 512x512 xc:"#A855F7" deadlift_beast.png
+convert -size 512x512 xc:"#A855F7" monthly_goal_3.png
+
+# Légendaire (or)
+convert -size 512x512 xc:"#F59E0B" workout_250.png
+
+
+═══════════════════════════════════════════════════════════════════
+  FIN DE LA RÉFÉRENCE
+═══════════════════════════════════════════════════════════════════
+
+Dernière mise à jour: 16 octobre 2025
+Système configuré et prêt à l'emploi ✅

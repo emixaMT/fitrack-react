@@ -14,7 +14,9 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../../config/supabaseConfig';
 import { sportsMeta, SportKey } from '../../../../constantes/sport';
+import { checkAndUnlockBadges } from '../../../../services/badgeService';
 import React from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
 
@@ -104,6 +106,9 @@ export default function Step2() {
       
       if (error) throw error;
 
+      // Vérifier et débloquer les badges automatiquement
+      await checkAndUnlockBadges(session.user.id);
+
       // Redirection vers home pour voir le slider se rafraîchir
       router.replace('/home');
     } catch (e) {
@@ -114,20 +119,28 @@ export default function Step2() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      className="flex-1 bg-white mt-12"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      className="flex-1 bg-white"
+      style={{ flex: 1 }}
     >
-      <ScrollView
-        className="flex-1 bg-white px-6 py-8"
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* header image/tag */}
-        {meta && (
-          <View className="items-center mb-6">
-            <Image source={meta.image} className="w-32 h-32 mb-2" resizeMode="contain" />
-            <Text className="text-indigo-600 font-semibold text-3xl">{meta.label}</Text>
-          </View>
-        )}
+      <View className="pt-12 flex-1">
+        <Pressable onPress={() => router.push('/workout')} className="p-2 rounded-full bg-gray-100 absolute top-16 left-4 z-10">
+          <Ionicons name="arrow-back" size={20} color="#111827" />
+        </Pressable>
+
+        <ScrollView
+          className="flex-1 bg-white px-6 py-8"
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          {/* header image/tag */}
+          {meta && (
+            <View className="items-center mb-6">
+              <Image source={meta.image} className="w-32 h-32 mb-2" resizeMode="contain" />
+              <Text className="text-indigo-600 font-semibold text-3xl">{meta.label}</Text>
+            </View>
+          )}
 
         {/* nom */}
         <Text className="text-gray-700 mb-2">Nom de la séance</Text>
@@ -195,12 +208,12 @@ export default function Step2() {
                     />
                   </View>
                   <View className="w-[32%]">
-                    <Text className="text-gray-600 mb-1">Charge (kg)</Text>
+                    <Text className="text-gray-600 mb-1">RPE</Text>
                     <TextInput
                       keyboardType="numeric"
                       value={exo.charge?.toString() ?? ''}
                       onChangeText={(t) => updateExo(idx, 'charge', t)}
-                      placeholder="ex: 60"
+                      placeholder="ex: 7"
                       className="border border-gray-300 rounded-xl px-3 py-3 bg-gray-50 text-gray-900"
                       placeholderTextColor="#4f46e5"
                     />
@@ -257,14 +270,15 @@ export default function Step2() {
 
         <View className="h-4" />
 
-        <Pressable
-          onPress={onSave}
-          disabled={!isValid}
-          className={`rounded-2xl py-4 ${isValid ? 'bg-indigo-600' : 'bg-indigo-300'}`}
-        >
-          <Text className="text-center text-white font-semibold">Enregistrer la séance</Text>
-        </Pressable>
-      </ScrollView>
+          <Pressable
+            onPress={onSave}
+            disabled={!isValid}
+            className={`rounded-2xl mb-12 py-4 ${isValid ? 'bg-indigo-600' : 'bg-indigo-300'}`}
+          >
+            <Text className="text-center text-white font-semibold">Enregistrer la séance</Text>
+          </Pressable>
+        </ScrollView>
+      </View>
     </KeyboardAvoidingView>
   );
 }

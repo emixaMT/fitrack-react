@@ -7,6 +7,7 @@ import {
 import type { ImageSourcePropType } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../../config/supabaseConfig";
+import { checkAndUnlockBadges } from "../../../services/badgeService";
 import { router } from "expo-router";
 
 /* Avatars locaux (on stocke uniquement l'id en base). 
@@ -165,6 +166,10 @@ export default function EditPerformances() {
       }
       
       setNewWeight("");
+      
+      // Vérifier et débloquer les badges automatiquement
+      await checkAndUnlockBadges(user.id);
+      
       Alert.alert("Succès", "Poids ajouté !");
       
       // Reload weights
@@ -209,6 +214,9 @@ export default function EditPerformances() {
         throw error;
       }
       
+      // Vérifier et débloquer les badges automatiquement
+      await checkAndUnlockBadges(user.id);
+      
       Alert.alert("Données mises à jour.");
       router.push("/user");
     } catch (e: any) { 
@@ -228,7 +236,7 @@ export default function EditPerformances() {
   const removeHyrox = (i: number) => setHyrox(r => r.filter((_, idx) => idx !== i));
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1 bg-white" keyboardVerticalOffset={Platform.OS === "ios" ? 1 : 0}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-white" keyboardVerticalOffset={Platform.OS === "ios" ? 1 : 20} style={{ flex: 1 }}>
       <SafeAreaView className="flex-1 bg-white">
         <ScrollView className="flex-1 bg-white p-6">
           {/* Entête */}
@@ -248,7 +256,7 @@ export default function EditPerformances() {
           <View className="mb-8">
             <Text className="text-lg font-semibold text-gray-800 mb-2">Évolution du poids</Text>
             <View className="flex-row items-center gap-3">
-              <TextInput value={newWeight} onChangeText={setNewWeight} keyboardType="numeric" placeholder="Ex: 72.5" placeholderTextColor="#4f46e5" className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-gray-900" />
+              <TextInput value={newWeight} onChangeText={setNewWeight} keyboardType="numbers-and-punctuation" placeholder="Ex: 72.5" placeholderTextColor="#4f46e5" className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-gray-900" />
               <Pressable onPress={addWeight} className="bg-indigo-600 px-4 py-3 rounded-xl"><Text className="text-white font-semibold">+</Text></Pressable>
             </View>
             {weights.length > 0 && (

@@ -136,13 +136,13 @@ export default function SeanceDetail() {
                   className="mb-4 p-4 rounded-xl border border-gray-200 bg-gray-50 flex-row items-center"
                 >
                   <View className="w-12 h-12 mr-3 rounded-xl bg-white border border-gray-200 items-center justify-center">
-                    {renderExerciseIcon(exo.nom)}
+                    <Ionicons name="barbell-outline" size={22} color="#4f46e5" />
                   </View>
                   <View className="flex-1">
                     <Text className="text-indigo-600 font-medium" numberOfLines={1}>{exo.nom}</Text>
                     <Text className="text-gray-700 text-sm mt-1">
                       {exo.series ?? "-"} séries × {exo.reps ?? "-"} reps
-                      {exo.charge != null ? <> • {exo.charge} kg</> : null}
+                      {exo.charge != null ? <> • rpe {exo.charge}</> : null}
                     </Text>
                   </View>
                 </View>

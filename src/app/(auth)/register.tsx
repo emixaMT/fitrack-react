@@ -4,6 +4,7 @@ import { View, TextInput, Text, Pressable, Alert } from "react-native";
 import { supabase } from "../../../config/supabaseConfig";
 import { register } from "../../../services/supabaseAuth";
 import React from "react";
+import { router } from "expo-router";
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState("");
@@ -15,13 +16,19 @@ export default function RegisterScreen() {
       const user = userCredential.user;
 
       // ✅ Créer un profil utilisateur dans Supabase
+      const monthKeyNow = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      };
+
       const { error: profileError } = await supabase
         .from('users')
         .insert({
           id: user.uid,
-          email: user.email,
-          is_active: true,
-          status: 'active',
+          name: email.split('@')[0],
+          monthly_sessions: 0,
+          monthly_target: 10,
+          month_key: monthKeyNow(),
         });
 
       if (profileError) {
@@ -29,7 +36,16 @@ export default function RegisterScreen() {
         Alert.alert("Attention", "Compte créé mais profil non sauvegardé: " + profileError.message);
       }
 
-      Alert.alert("Succès", "Utilisateur créé !");
+      Alert.alert(
+        "Succès",
+        "Utilisateur créé ! Vous pouvez maintenant vous connecter.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace('/(auth)'),
+          },
+        ]
+      );
     } catch (error: any) {
       Alert.alert("Erreur", error.message);
     }

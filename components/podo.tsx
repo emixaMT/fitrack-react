@@ -4,6 +4,7 @@ import { Pedometer } from 'expo-sensors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProgressBar from './progressBar';
 import React from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const STEPS_STORAGE_KEY = '@steps_today';
 const DATE_STORAGE_KEY = '@steps_date';
@@ -12,6 +13,7 @@ export default function StepCounter() {
   const [steps, setSteps] = useState<number>(0);
   const [isAvailable, setIsAvailable] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { colors } = useTheme();
 
   useEffect(() => {
     let subscription: any = null;
@@ -96,13 +98,13 @@ export default function StepCounter() {
   }, []);
 
   return (
-    <View className="py-4 mt-6">
-      <Text className="text-lg text-center text-indigo-600">Nombre de pas aujourd'hui</Text>
+    <View>
+      <Text style={{ fontSize: 18, textAlign: 'center', color: colors.indigo }}>Nombre de pas aujourd'hui</Text>
       {error ? (
         <Text className="text-sm text-center text-red-500 mt-2">{error}</Text>
       ) : (
         <>
-          <Text className="text-2xl font-bold text-indigo-600 mb-4 text-center">
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.indigo, marginBottom: 16, textAlign: 'center' }}>
             {isAvailable ? steps.toLocaleString() : '...'} / 10 000
           </Text>
           <ProgressBar progress={Math.min(steps / 10000, 1)} />

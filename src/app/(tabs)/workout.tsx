@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useNavigation } from "expo-router";
 import { supabase } from "../../../config/supabaseConfig";
+import { checkAndUnlockBadges } from "../../../services/badgeService";
 import {
   View,
   Text,
@@ -217,6 +218,9 @@ export default function WorkoutScreen() {
         created_at: new Date().toISOString(),
       });
       if (error) throw error;
+
+      // Vérifier et débloquer les badges automatiquement
+      await checkAndUnlockBadges(session.user.id);
     } catch {
       Alert.alert("Erreur", "Impossible d'ajouter la séance");
     }
