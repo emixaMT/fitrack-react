@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, Text, Pressable, ScrollView, Alert, Dimensions, Image, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -52,7 +52,7 @@ export default function HomeScreen() {
     check();
   }, [user?.id]);
 
-  const handleAddSession = () => setSessionTypeModalVisible(true);
+  const handleAddSession = useCallback(() => setSessionTypeModalVisible(true), []);
 
   async function handleCompleteChallenge() {
     if (!user) { Alert.alert('Erreur', 'Reconnecte-toi.'); return; }
@@ -81,9 +81,12 @@ export default function HomeScreen() {
   }
 
   const challengeDetails = getChallengeDetailsForDay(getDayOfYear());
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-  const userName = user?.email?.split('@')[0] ?? 'Athlète';
+  const { greeting, userName } = useMemo(() => {
+    const hour = new Date().getHours();
+    const g = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+    const un = user?.email?.split('@')[0] ?? 'Athlète';
+    return { greeting: g, userName: un };
+  }, [user?.email]);
   const FALLBACK = require('../../../src/assets/fallback.png');
   const { source: avatarSource } = useHeaderAvatar(FALLBACK);
   const [refreshing, setRefreshing] = useState(false);

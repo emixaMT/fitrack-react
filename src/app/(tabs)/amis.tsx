@@ -8,8 +8,9 @@ import {
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
+import type { BarCodeScanner as BarCodeScannerType, BarCodeScannerResult } from 'expo-barcode-scanner';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, type ThemeColors } from '../../../contexts/ThemeContext';
 import {
   getFriends, sendFriendRequest, acceptFriendRequest, removeFriend, getLeaderboard,
   getMyFriendCode, addFriendByCode,
@@ -17,6 +18,112 @@ import {
 } from '../../../services/friendsService';
 
 const FALLBACK = require('../../../src/assets/fallback.png');
+
+type LeaderboardCardProps = {
+  entry: LeaderboardEntry;
+  colors: ThemeColors;
+  userId?: string;
+};
+
+const LeaderboardCard = React.memo(function LeaderboardCard({ entry, colors, userId }: LeaderboardCardProps) {
+  const isMe = entry.id === userId;
+  const medalColor = entry.rank === 1 ? '#FFD700' : entry.rank === 2 ? '#C0C0C0' : entry.rank === 3 ? '#CD7F32' : colors.textTertiary;
+  return (
+    <View key={entry.id} style={{
+      flexDirection: 'row', alignItems: 'center', padding: 14, marginBottom: 8,
+      backgroundColor: isMe ? colors.primary + '15' : colors.card, borderRadius: 14,
+    }}>
+      <View style={{ width: 36, alignItems: 'center' }}>
+        {entry.rank <= 3 ? (
+          <Ionicons name="medal" size={22} color={medalColor} />
+        ) : (
+          <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textTertiary }}>#{entry.rank}</Text>
+        )}
+      </View>
+      <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', marginLeft: 8, backgroundColor: colors.divider }}>
+        {entry.photoURL ? (
+          <Image source={{ uri: entry.photoURL }} style={{ width: '100%', height: '100%' }} />
+        ) : (
+          <Image source={FALLBACK} style={{ width: '100%', height: '100%' }} />
+        )}
+      </View>
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>
+          {entry.name} {isMe && '(Toi)'}
+        </Text>
+        <View style={{ flexDirection: 'row', gap: 12, marginTop: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+            <Ionicons name="trophy-outline" size={12} color={colors.textTertiary} />
+            <Text style={{ fontSize: 12, color: colors.textTertiary }}>{entry.badgeCount}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+            <Ionicons name="barbell-outline" size={12} color={colors.textTertiary} />
+            <Text style={{ fontSize: 12, color: colors.textTertiary }}>{entry.monthlySessions} séances</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+});
+
+type FriendCardProps = {
+  friend: Friend;
+  colors: ThemeColors;
+  onRemove: (friendId: string, name: string) => void;
+};
+
+const FriendCard = React.memo(function FriendCard({ friend, colors, onRemove }: FriendCardProps) {
+  return (
+    <View key={friend.id} style={{
+      flexDirection: 'row', alignItems: 'center', padding: 14, marginBottom: 8,
+      backgroundColor: colors.card, borderRadius: 14,
+    }}>
+      <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.divider }}>
+        {friend.photoURL ? (
+          <Image source={{ uri: friend.photoURL }} style={{ width: '100%', height: '100%' }} />
+        ) : (
+          <Image source={FALLBACK} style={{ width: '100%', height: '100%' }} />
+        )}
+      </View>
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{friend.name}</Text>
+        <Text style={{ fontSize: 12, color: colors.textTertiary }}>{friend.monthlySessions} séances ce mois</Text>
+      </View>
+      <Pressable onPress={() => onRemove(friend.id, friend.name)} hitSlop={8}>
+        <Ionicons name="close-outline" size={22} color={colors.textTertiary} />
+      </Pressable>
+    </View>
+  );
+});
+
+type PendingCardProps = {
+  friend: Friend;
+  colors: ThemeColors;
+  onAccept: (friendId: string) => void;
+};
+
+const PendingCard = React.memo(function PendingCard({ friend, colors, onAccept }: PendingCardProps) {
+  return (
+    <View key={friend.id} style={{
+      flexDirection: 'row', alignItems: 'center', padding: 14, marginBottom: 8,
+      backgroundColor: colors.card, borderRadius: 14,
+    }}>
+      <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.divider }}>
+        <Image source={FALLBACK} style={{ width: '100%', height: '100%' }} />
+      </View>
+      <View style={{ flex: 1, marginLeft: 12 }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{friend.name}</Text>
+        <Text style={{ fontSize: 12, color: colors.textTertiary }}>Demande d'ami</Text>
+      </View>
+      <Pressable
+        onPress={() => onAccept(friend.id)}
+        style={{ backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, marginRight: 8 }}
+      >
+        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Accepter</Text>
+      </Pressable>
+    </View>
+  );
+});
 
 export default function AmisScreen() {
   const router = useRouter();
@@ -42,7 +149,7 @@ export default function AmisScreen() {
   // Scanner
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
-  const cameraRef = useRef<any>(null);
+  const cameraRef = useRef<null>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -83,7 +190,7 @@ export default function AmisScreen() {
     setSending(false);
   };
 
-  const handleAccept = async (friendId: string) => {
+  const handleAccept = useCallback(async (friendId: string) => {
     if (!user) return;
     const success = await acceptFriendRequest(user.id, friendId);
     if (success) {
@@ -92,9 +199,9 @@ export default function AmisScreen() {
     } else {
       Alert.alert('Erreur', 'Impossible d\'accepter la demande.');
     }
-  };
+  }, [user, loadData]);
 
-  const handleRemove = (friendId: string, name: string) => {
+  const handleRemove = useCallback((friendId: string, name: string) => {
     Alert.alert('Retirer', `Retirer ${name} de tes amis ?`, [
       { text: 'Annuler', style: 'cancel' },
       {
@@ -105,7 +212,7 @@ export default function AmisScreen() {
         }
       },
     ]);
-  };
+  }, [user, loadData]);
 
   const handleAddByCode = async () => {
     if (!user || !codeInput.trim()) return;
@@ -163,89 +270,17 @@ export default function AmisScreen() {
     );
   }
 
-  const renderLeaderboardEntry = (entry: LeaderboardEntry) => {
-    const isMe = entry.id === user?.id;
-    const medalColor = entry.rank === 1 ? '#FFD700' : entry.rank === 2 ? '#C0C0C0' : entry.rank === 3 ? '#CD7F32' : colors.textTertiary;
-    return (
-      <View key={entry.id} style={{
-        flexDirection: 'row', alignItems: 'center', padding: 14, marginBottom: 8,
-        backgroundColor: isMe ? colors.primary + '15' : colors.card, borderRadius: 14,
-      }}>
-        <View style={{ width: 36, alignItems: 'center' }}>
-          {entry.rank <= 3 ? (
-            <Ionicons name="medal" size={22} color={medalColor} />
-          ) : (
-            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.textTertiary }}>#{entry.rank}</Text>
-          )}
-        </View>
-        <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', marginLeft: 8, backgroundColor: colors.divider }}>
-          {entry.photoURL ? (
-            <Image source={{ uri: entry.photoURL }} style={{ width: '100%', height: '100%' }} />
-          ) : (
-            <Image source={FALLBACK} style={{ width: '100%', height: '100%' }} />
-          )}
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>
-            {entry.name} {isMe && '(Toi)'}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 12, marginTop: 2 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <Ionicons name="trophy-outline" size={12} color={colors.textTertiary} />
-              <Text style={{ fontSize: 12, color: colors.textTertiary }}>{entry.badgeCount}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-              <Ionicons name="barbell-outline" size={12} color={colors.textTertiary} />
-              <Text style={{ fontSize: 12, color: colors.textTertiary }}>{entry.monthlySessions} séances</Text>
-            </View>
-          </View>
-        </View>
-      </View>
-    );
-  };
+  const renderLeaderboardEntry = useCallback((entry: LeaderboardEntry) => (
+    <LeaderboardCard entry={entry} colors={colors} userId={user?.id} />
+  ), [colors, user?.id]);
 
-  const renderFriend = (friend: Friend) => (
-    <View key={friend.id} style={{
-      flexDirection: 'row', alignItems: 'center', padding: 14, marginBottom: 8,
-      backgroundColor: colors.card, borderRadius: 14,
-    }}>
-      <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.divider }}>
-        {friend.photoURL ? (
-          <Image source={{ uri: friend.photoURL }} style={{ width: '100%', height: '100%' }} />
-        ) : (
-          <Image source={FALLBACK} style={{ width: '100%', height: '100%' }} />
-        )}
-      </View>
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{friend.name}</Text>
-        <Text style={{ fontSize: 12, color: colors.textTertiary }}>{friend.monthlySessions} séances ce mois</Text>
-      </View>
-      <Pressable onPress={() => handleRemove(friend.id, friend.name)} hitSlop={8}>
-        <Ionicons name="close-outline" size={22} color={colors.textTertiary} />
-      </Pressable>
-    </View>
-  );
+  const renderFriend = useCallback((friend: Friend) => (
+    <FriendCard friend={friend} colors={colors} onRemove={handleRemove} />
+  ), [colors, handleRemove]);
 
-  const renderPending = (friend: Friend) => (
-    <View key={friend.id} style={{
-      flexDirection: 'row', alignItems: 'center', padding: 14, marginBottom: 8,
-      backgroundColor: colors.card, borderRadius: 14,
-    }}>
-      <View style={{ width: 40, height: 40, borderRadius: 20, overflow: 'hidden', backgroundColor: colors.divider }}>
-        <Image source={FALLBACK} style={{ width: '100%', height: '100%' }} />
-      </View>
-      <View style={{ flex: 1, marginLeft: 12 }}>
-        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{friend.name}</Text>
-        <Text style={{ fontSize: 12, color: colors.textTertiary }}>Demande d'ami</Text>
-      </View>
-      <Pressable
-        onPress={() => handleAccept(friend.id)}
-        style={{ backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, marginRight: 8 }}
-      >
-        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Accepter</Text>
-      </Pressable>
-    </View>
-  );
+  const renderPending = useCallback((friend: Friend) => (
+    <PendingCard friend={friend} colors={colors} onAccept={handleAccept} />
+  ), [colors, handleAccept]);
 
   return (
     <>
@@ -537,7 +572,7 @@ export default function AmisScreen() {
 
 // Composant scanner (chargé dynamiquement sur native)
 function ScannerView({ onScanned, scanned }: { onScanned: (data: string) => void; scanned: boolean }) {
-  const [BarCodeScanner, setBarCodeScanner] = useState<any>(null);
+  const [BarCodeScanner, setBarCodeScanner] = useState<typeof BarCodeScannerType | null>(null);
 
   useEffect(() => {
     import('expo-barcode-scanner').then((mod) => {
@@ -549,7 +584,7 @@ function ScannerView({ onScanned, scanned }: { onScanned: (data: string) => void
 
   return (
     <BarCodeScanner
-      onBarCodeScanned={scanned ? undefined : (result: any) => onScanned(result.data)}
+      onBarCodeScanned={scanned ? undefined : (result: BarCodeScannerResult) => onScanned(result.data)}
       style={StyleSheet.absoluteFillObject}
       barCodeTypes={[BarCodeScanner.Constants.BarCodeType.qr]}
     />

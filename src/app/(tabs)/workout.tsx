@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter, useNavigation } from "expo-router";
 import { supabase } from "../../../config/supabaseConfig";
 import { useAuth } from "../../../contexts/AuthContext";
-import { useTheme } from "../../../contexts/ThemeContext";
+import { useTheme, type ThemeColors } from "../../../contexts/ThemeContext";
 import {
   View, Text, Pressable, Platform, ActionSheetIOS, Alert,
   FlatList, ActivityIndicator, RefreshControl, Dimensions, ScrollView,
@@ -20,14 +20,27 @@ const screenWidth = Dimensions.get('window').width;
 type Exercice = { nom: string; series?: number; reps?: number; charge?: number };
 type Seance = { id: string; nom: string; id_user: string; category?: string; created_at?: string; exercices: Exercice[] };
 
-const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
+/** Shape of a seances row returned by Supabase */
+interface SeanceRow {
+  id: string;
+  nom?: string | null;
+  id_user?: string | null;
+  category?: string | null;
+  created_at?: string | null;
+  exercices?: Exercice[] | null;
+}
+
+/** Ionicons glyph name type */
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const CATEGORY_CONFIG: Record<string, { label: string; icon: IoniconName; color: string }> = {
   musculation: { label: 'Musculation', icon: 'barbell', color: '#6366F1' },
   crossfit: { label: 'Crossfit', icon: 'flame', color: '#f59e0b' },
   running: { label: 'Running', icon: 'footsteps', color: '#34c759' },
   velo: { label: 'Vélo', icon: 'bicycle', color: '#06b6d4' },
 };
 
-function getCatConfig(cat?: string) {
+function getCatConfig(cat?: string): { label: string; icon: IoniconName; color: string } {
   const key = (cat || '').toLowerCase();
   return CATEGORY_CONFIG[key] || { label: cat || 'Autre', icon: 'fitness', color: '#8e8e93' };
 }
@@ -38,6 +51,54 @@ function isEndurance(cat?: string) {
 }
 
 type Filter = 'all' | 'musculation' | 'crossfit' | 'running' | 'velo';
+
+type SeanceCardProps = {
+  item: Seance;
+  colors: ThemeColors;
+  formatDate: (ts?: string) => string;
+  onPress: (id: string) => void;
+  onLongPress: (id: string) => void;
+  onDelete: (id: string) => void;
+};
+
+const SeanceCard = React.memo(function SeanceCard({ item: s, colors, formatDate, onPress, onLongPress, onDelete }: SeanceCardProps) {
+  const endurance = isEndurance(s.category);
+  const cat = getCatConfig(s.category);
+  return (
+    <SwipeableRow onDelete={() => onDelete(s.id)}>
+      <Pressable
+        onPress={() => onPress(s.id)}
+        onLongPress={() => onLongPress(s.id)}
+        delayLongPress={400}
+        style={[cardStyle(colors, 'sm'), { padding: 16, marginBottom: 10 }]}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          {/* Category icon */}
+          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: cat.color + '22', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name={cat.icon} size={24} color={cat.color} />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }} numberOfLines={1}>{s.nom}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <View style={{ backgroundColor: cat.color + '22', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                <Text style={{ fontSize: 11, fontWeight: '600', color: cat.color }}>{cat.label}</Text>
+              </View>
+              {!endurance && (
+                <Text style={{ fontSize: 12, color: colors.textSecondary }}>{s.exercices?.length ?? 0} exercice(s)</Text>
+              )}
+              {s.created_at && (
+                <Text style={{ fontSize: 12, color: colors.textTertiary }}>{formatDate(s.created_at)}</Text>
+              )}
+            </View>
+          </View>
+
+          <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+        </View>
+      </Pressable>
+    </SwipeableRow>
+  );
+});
 
 export default function WorkoutScreen() {
   const router = useRouter();
@@ -55,11 +116,11 @@ export default function WorkoutScreen() {
   const [toastMsg, setToastMsg] = useState("");
   const seancesCountRef = useRef(0);
 
-  const filteredSeances = filter === 'all' ? allSeances : allSeances.filter(s => (s.category || '').toLowerCase() === filter);
+  const filteredSeances = useMemo(() => filter === 'all' ? allSeances : allSeances.filter(s => (s.category || '').toLowerCase() === filter), [allSeances, filter]);
 
-  const mapSeance = (d: any, userId: string): Seance => ({
+  const mapSeance = (d: SeanceRow, userId: string): Seance => ({
     id: d.id, nom: d.nom ?? "Sans titre", id_user: d.id_user ?? userId,
-    category: d.category, created_at: d.created_at, exercices: Array.isArray(d.exercices) ? d.exercices : [],
+    category: d.category ?? undefined, created_at: d.created_at ?? undefined, exercices: Array.isArray(d.exercices) ? d.exercices : [],
   });
 
   const loadSeances = useCallback(async (userId: string, reset = false) => {
@@ -71,7 +132,7 @@ export default function WorkoutScreen() {
       if (reset) setAllSeances([]);
       setLoading(false); setRefreshing(false); setLoadingMore(false); return;
     }
-    const items = (data || []).map((d: any) => mapSeance(d, userId));
+    const items = (data || []).map((d: SeanceRow) => mapSeance(d, userId));
     setHasMore(items.length === PAGE_SIZE);
     setAllSeances(prev => {
       if (reset) { seancesCountRef.current = items.length; return items; }
@@ -173,50 +234,22 @@ export default function WorkoutScreen() {
     }
   }
 
-  const formatDate = (ts?: string) => {
+  const formatDate = useCallback((ts?: string) => {
     if (!ts) return "";
     const d = new Date(ts);
     return d.toLocaleDateString(undefined, { day: "2-digit", month: "short" });
-  };
+  }, []);
 
-  const renderSeance = ({ item: s }: { item: Seance }) => {
-    const endurance = isEndurance(s.category);
-    const cat = getCatConfig(s.category);
-    return (
-      <SwipeableRow onDelete={() => handleDelete(s.id)}>
-        <Pressable
-          onPress={() => router.push(`/seances/${s.id}`)}
-          onLongPress={() => openMenu(s.id)}
-          delayLongPress={400}
-          style={[cardStyle(colors, 'sm'), { padding: 16, marginBottom: 10 }]}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-            {/* Category icon */}
-            <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: cat.color + '22', alignItems: 'center', justifyContent: 'center' }}>
-              <Ionicons name={cat.icon as any} size={24} color={cat.color} />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }} numberOfLines={1}>{s.nom}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                <View style={{ backgroundColor: cat.color + '22', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '600', color: cat.color }}>{cat.label}</Text>
-                </View>
-                {!endurance && (
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>{s.exercices?.length ?? 0} exercice(s)</Text>
-                )}
-                {s.created_at && (
-                  <Text style={{ fontSize: 12, color: colors.textTertiary }}>{formatDate(s.created_at)}</Text>
-                )}
-              </View>
-            </View>
-
-            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-          </View>
-        </Pressable>
-      </SwipeableRow>
-    );
-  };
+  const renderSeance = useCallback(({ item: s }: { item: Seance }) => (
+    <SeanceCard
+      item={s}
+      colors={colors}
+      formatDate={formatDate}
+      onPress={(id) => router.push(`/seances/${id}`)}
+      onLongPress={openMenu}
+      onDelete={handleDelete}
+    />
+  ), [colors, formatDate, router]);
 
   const renderEmpty = () => {
     if (loading) return null;
@@ -239,7 +272,7 @@ export default function WorkoutScreen() {
     );
   };
 
-  const FILTERS: { key: Filter; label: string; icon: string }[] = [
+  const FILTERS: { key: Filter; label: string; icon: IoniconName }[] = [
     { key: 'all', label: 'Tout', icon: 'apps' },
     { key: 'musculation', label: 'Muscu', icon: 'barbell' },
     { key: 'crossfit', label: 'Crossfit', icon: 'flame' },
@@ -290,7 +323,7 @@ export default function WorkoutScreen() {
                       backgroundColor: active ? catColor : colors.card,
                     }}
                   >
-                    <Ionicons name={f.icon as any} size={14} color={active ? '#fff' : colors.textSecondary} />
+                    <Ionicons name={f.icon} size={14} color={active ? '#fff' : colors.textSecondary} />
                     <Text style={{ fontSize: 13, fontWeight: '600', color: active ? '#fff' : colors.textSecondary }}>{f.label}</Text>
                   </Pressable>
                 );

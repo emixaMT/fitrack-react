@@ -1,5 +1,5 @@
 // FILE: src/app/(tabs)/user.tsx
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Image, Pressable, View, Text, ScrollView, ActivityIndicator, Alert, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
 import { router, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -100,11 +100,11 @@ export default function UserScreen() {
     setTimeout(() => setRefreshing(false), 800);
   };
 
-  const handleTabChange = (tab: 'performances' | 'success') => {
+  const handleTabChange = useCallback((tab: 'performances' | 'success') => {
     setActiveTab(tab);
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     Alert.alert(
       'Déconnexion',
       'Êtes-vous sûr de vouloir vous déconnecter ?',
@@ -117,7 +117,36 @@ export default function UserScreen() {
         },
       ]
     );
-  };
+  }, [signOut]);
+
+  const { badgesToShow, unlockedBadgeIds } = useMemo(() => {
+    const unlockedIds = new Set(userBadges.map((ub) => ub.badge_id));
+    const rarityOrder = { common: 1, rare: 2, epic: 3, legendary: 4 };
+    const unlockedBadges: Badge[] = [];
+    const lockedBadges: Badge[] = [];
+    allBadges.forEach((badge) => {
+      if (unlockedIds.has(badge.id)) {
+        unlockedBadges.push(badge);
+      } else {
+        lockedBadges.push(badge);
+      }
+    });
+    const sortUnlockedByRarity = (a: Badge, b: Badge) => {
+      const orderA = rarityOrder[a.rarity] || 0;
+      const orderB = rarityOrder[b.rarity] || 0;
+      return orderB - orderA;
+    };
+    const sortLockedByRarity = (a: Badge, b: Badge) => {
+      const orderA = rarityOrder[a.rarity] || 999;
+      const orderB = rarityOrder[b.rarity] || 999;
+      return orderA - orderB;
+    };
+    unlockedBadges.sort(sortUnlockedByRarity);
+    lockedBadges.sort(sortLockedByRarity);
+    const sortedBadges = [...unlockedBadges, ...lockedBadges];
+    const toShow = showAllBadges ? sortedBadges : sortedBadges.slice(0, 3);
+    return { badgesToShow: toShow, unlockedBadgeIds: unlockedIds };
+  }, [userBadges, allBadges, showAllBadges]);
 
   if (loading) {
     return (
@@ -306,66 +335,23 @@ export default function UserScreen() {
 
           {/* Badges Grid */}
           <View className="flex-row flex-wrap justify-center">
-            {(() => {
-              // Créer un Set des badge_id débloqués
-              const unlockedBadgeIds = new Set(userBadges.map((ub) => ub.badge_id));
-
-              // Définir l'ordre des raretés
-              const rarityOrder = { common: 1, rare: 2, epic: 3, legendary: 4 };
-
-              // Séparer les badges en débloqués et bloqués
-              const unlockedBadges: Badge[] = [];
-              const lockedBadges: Badge[] = [];
-
-              allBadges.forEach((badge) => {
-                if (unlockedBadgeIds.has(badge.id)) {
-                  unlockedBadges.push(badge);
-                } else {
-                  lockedBadges.push(badge);
-                }
-              });
-
-              // Trier les DÉBLOQUÉS : legendary → epic → rare → common (décroissant)
-              const sortUnlockedByRarity = (a: Badge, b: Badge) => {
-                const orderA = rarityOrder[a.rarity] || 0;
-                const orderB = rarityOrder[b.rarity] || 0;
-                return orderB - orderA; // Ordre décroissant
-              };
-
-              // Trier les BLOQUÉS : common → rare → epic → legendary (croissant)
-              const sortLockedByRarity = (a: Badge, b: Badge) => {
-                const orderA = rarityOrder[a.rarity] || 999;
-                const orderB = rarityOrder[b.rarity] || 999;
-                return orderA - orderB; // Ordre croissant
-              };
-
-              unlockedBadges.sort(sortUnlockedByRarity);
-              lockedBadges.sort(sortLockedByRarity);
-
-              // Combiner : débloqués en premier, puis bloqués
-              const sortedBadges = [...unlockedBadges, ...lockedBadges];
-
-              // Limiter à 3 badges si le toggle n'est pas activé
-              const badgesToShow = showAllBadges ? sortedBadges : sortedBadges.slice(0, 3);
-
-              return badgesToShow.map((badge) => {
-                const isUnlocked = unlockedBadgeIds.has(badge.id);
-                return (
-                  <View key={badge.id} style={{ width: '33.33%', alignItems: 'center' }}>
-                    <BadgeItem 
-                      badge={badge} 
-                      unlocked={isUnlocked} 
-                      size="small"
-                      onPress={() => {
-                        setSelectedBadge(badge);
-                        setIsBadgeUnlocked(isUnlocked);
-                        setBadgeModalVisible(true);
-                      }}
-                    />
-                  </View>
-                );
-              });
-            })()}
+            {badgesToShow.map((badge) => {
+              const isUnlocked = unlockedBadgeIds.has(badge.id);
+              return (
+                <View key={badge.id} style={{ width: '33.33%', alignItems: 'center' }}>
+                  <BadgeItem
+                    badge={badge}
+                    unlocked={isUnlocked}
+                    size="small"
+                    onPress={() => {
+                      setSelectedBadge(badge);
+                      setIsBadgeUnlocked(isUnlocked);
+                      setBadgeModalVisible(true);
+                    }}
+                  />
+                </View>
+              );
+            })}
           </View>
 
           {/* Toggle Button */}

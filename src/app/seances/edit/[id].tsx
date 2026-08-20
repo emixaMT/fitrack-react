@@ -19,6 +19,15 @@ import { safeUUID } from "../../../../utils/validation";
 
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
 type Seance = { nom: string; id_user: string; exercices: Exercice[] };
+
+/** Shape of an exercice entry stored in the seances row */
+interface ExerciceRow {
+  nom?: string | null;
+  series?: number | null;
+  reps?: number | null;
+  charge?: number | null;
+  [key: string]: unknown;
+}
 export default function EditSeanceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -65,7 +74,7 @@ export default function EditSeanceScreen() {
         setNom(data.nom ?? "");
         setExercices(
           Array.isArray(data.exercices) && data.exercices.length
-            ? data.exercices.map((e: any) => ({
+            ? data.exercices.map((e: ExerciceRow) => ({
                 nom: e.nom ?? "",
                 series: e.series ?? null,
                 reps: e.reps ?? null,

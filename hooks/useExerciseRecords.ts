@@ -11,6 +11,21 @@ export type ExerciseRecord = {
   date: string | null;
 };
 
+/** Shape of an exercice entry within a seances row */
+interface ExerciceRecordRow {
+  nom?: string | null;
+  charge?: number | null;
+  reps?: number | null;
+  [key: string]: unknown;
+}
+
+/** Shape of a seances row returned by Supabase (exercices + created_at) */
+interface SeanceRecordRow {
+  exercices: ExerciceRecordRow[] | null;
+  created_at: string | null;
+  [key: string]: unknown;
+}
+
 export function useExerciseRecords(userId: string | undefined) {
   const [records, setRecords] = useState<Record<string, ExerciseRecord>>({});
   const [loading, setLoading] = useState(true);
@@ -29,9 +44,10 @@ export function useExerciseRecords(userId: string | undefined) {
 
         if (error || !data) { setLoading(false); return; }
 
+        const rows = data as SeanceRecordRow[];
         const recordMap: Record<string, ExerciseRecord> = {};
 
-        for (const seance of data) {
+        for (const seance of rows) {
           if (!Array.isArray(seance.exercices)) continue;
           const date = seance.created_at;
 

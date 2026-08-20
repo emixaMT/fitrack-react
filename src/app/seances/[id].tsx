@@ -38,6 +38,9 @@ type Seance = {
   exercices?: Exercice[];              // <-- pour musculation/crossfit
 };
 
+/** Ionicons glyph name type */
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
 export default function SeanceDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -120,7 +123,7 @@ export default function SeanceDetail() {
 
         <View className="flex-1 justify-center items-center">
           <View className="absolute right-6 bottom-4 opacity-30">
-            <Ionicons name={sport.icon as any} size={80} color="#fff" />
+            <Ionicons name={sport.icon as IoniconName} size={80} color="#fff" />
           </View>
           <Text className="text-3xl font-bold pt-12" style={{ color: '#fff' }}>{seance.nom}</Text>
           <Text className="mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>{sport.label}</Text>
@@ -190,7 +193,7 @@ function Row({ label, value }: { label: string; value: string }) {
 
 /* ---------- Helpers ---------- */
 // Why: convertir "24" → 24 ; sinon undefined
-function toNum(x: any): number | undefined {
+function toNum(x: number | string | undefined): number | undefined {
   if (typeof x === "number" && !Number.isNaN(x)) return x;
   if (typeof x === "string" && x.trim() !== "" && !Number.isNaN(Number(x))) return Number(x);
   return undefined;

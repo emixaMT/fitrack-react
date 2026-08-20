@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import {
   View, Text, Pressable, ActivityIndicator, Modal, Alert,
   FlatList, RefreshControl, ScrollView,
@@ -7,13 +7,57 @@ import { useRouter } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { supabase } from "../../../config/supabaseConfig";
 import { useAuth } from "../../../contexts/AuthContext";
-import { useTheme } from "../../../contexts/ThemeContext";
+import { useTheme, type ThemeColors } from "../../../contexts/ThemeContext";
 import { cardStyle } from "../../../utils/styles";
-import React from "react";
 
 const PAGE_SIZE = 20;
 
 type Note = { id: string; content: string; createdAt?: string; id_user: string };
+
+/** Shape of a notes row returned by Supabase */
+interface NoteRow {
+  id: string;
+  content: string;
+  created_at?: string | null;
+  id_user: string;
+  [key: string]: unknown;
+}
+
+type NoteCardProps = {
+  item: Note;
+  colors: ThemeColors;
+  parseDate: (ts?: string) => { day: string; month: string; full: string };
+  onPress: (note: Note) => void;
+  onLongPress: (noteId: string) => void;
+};
+
+const NoteCard = React.memo(function NoteCard({ item: n, colors, parseDate, onPress, onLongPress }: NoteCardProps) {
+  const d = parseDate(n.createdAt);
+  return (
+    <Pressable
+      onPress={() => onPress(n)}
+      onLongPress={() => onLongPress(n.id)}
+      delayLongPress={400}
+      style={[cardStyle(colors, 'sm'), { padding: 16, marginBottom: 10, flexDirection: 'row', gap: 14 }]}
+    >
+      {/* Date badge */}
+      <View style={{ width: 48, alignItems: 'center' }}>
+        <View style={{
+          backgroundColor: colors.divider, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 6,
+          alignItems: 'center', width: '100%',
+        }}>
+          <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>{d.day}</Text>
+          <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase' }}>{d.month}</Text>
+        </View>
+      </View>
+
+      {/* Content */}
+      <View style={{ flex: 1 }}>
+        <Text style={{ color: colors.text, fontSize: 15, lineHeight: 22 }} numberOfLines={3}>{n.content}</Text>
+      </View>
+    </Pressable>
+  );
+});
 
 export default function NotesScreen() {
   const router = useRouter();
@@ -28,7 +72,7 @@ export default function NotesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const notesCountRef = useRef(0);
 
-  const mapNote = (d: any): Note => ({ id: d.id, content: d.content, createdAt: d.created_at, id_user: d.id_user });
+  const mapNote = (d: NoteRow): Note => ({ id: d.id, content: d.content, createdAt: d.created_at ?? undefined, id_user: d.id_user });
 
   const loadNotes = useCallback(async (userId: string, reset = false) => {
     const offset = reset ? 0 : notesCountRef.current;
@@ -65,7 +109,7 @@ export default function NotesScreen() {
   const handleRefresh = () => { if (!user) return; setRefreshing(true); loadNotes(user.id, true); };
   const handleLoadMore = () => { if (!user || loadingMore || !hasMore) return; setLoadingMore(true); loadNotes(user.id, false); };
 
-  const parseDate = (ts?: string) => {
+  const parseDate = useCallback((ts?: string) => {
     if (!ts) return { day: '', month: '', full: '' };
     const d = new Date(ts);
     return {
@@ -73,10 +117,10 @@ export default function NotesScreen() {
       month: d.toLocaleDateString(undefined, { month: 'short' }).replace('.', ''),
       full: d.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" }),
     };
-  };
+  }, []);
 
-  const openNote = (note: Note) => { setSelectedNote(note); setModalVisible(true); };
-  const closeModal = () => { setModalVisible(false); setSelectedNote(null); };
+  const openNote = useCallback((note: Note) => { setSelectedNote(note); setModalVisible(true); }, []);
+  const closeModal = useCallback(() => { setModalVisible(false); setSelectedNote(null); }, []);
 
   const handleDelete = (noteId: string) => {
     Alert.alert("Supprimer", "Définitif ?", [
@@ -95,33 +139,15 @@ export default function NotesScreen() {
     ]);
   };
 
-  const renderNote = ({ item: n }: { item: Note }) => {
-    const d = parseDate(n.createdAt);
-    return (
-      <Pressable
-        onPress={() => openNote(n)}
-        onLongPress={() => handleDelete(n.id)}
-        delayLongPress={400}
-        style={[cardStyle(colors, 'sm'), { padding: 16, marginBottom: 10, flexDirection: 'row', gap: 14 }]}
-      >
-        {/* Date badge */}
-        <View style={{ width: 48, alignItems: 'center' }}>
-          <View style={{
-            backgroundColor: colors.divider, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 6,
-            alignItems: 'center', width: '100%',
-          }}>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: colors.text }}>{d.day}</Text>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: colors.textSecondary, textTransform: 'uppercase' }}>{d.month}</Text>
-          </View>
-        </View>
-
-        {/* Content */}
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.text, fontSize: 15, lineHeight: 22 }} numberOfLines={3}>{n.content}</Text>
-        </View>
-      </Pressable>
-    );
-  };
+  const renderNote = useCallback(({ item: n }: { item: Note }) => (
+    <NoteCard
+      item={n}
+      colors={colors}
+      parseDate={parseDate}
+      onPress={openNote}
+      onLongPress={handleDelete}
+    />
+  ), [colors, parseDate, openNote]);
 
   const renderEmpty = () => {
     if (loading) return null;

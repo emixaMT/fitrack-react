@@ -27,6 +27,37 @@ export type LeaderboardEntry = {
   rank: number;
 };
 
+/** Shape of a user row joined in the friends query */
+interface FriendUserRow {
+  id: string;
+  name: string | null;
+  email: string | null;
+  photo_url?: string | null;
+  photoURL?: string | null;
+  monthly_sessions?: number | null;
+}
+
+/** Shape of a sent friend relation row (user_id → friend_id) */
+interface SentFriendRow {
+  friend_id: string;
+  status: FriendStatus;
+  created_at: string;
+  users?: FriendUserRow;
+}
+
+/** Shape of a received friend relation row (friend_id ← user_id) */
+interface ReceivedFriendRow {
+  user_id: string;
+  status: FriendStatus;
+  created_at: string;
+  users?: FriendUserRow;
+}
+
+/** Shape of a user_badges row used for counting badges per user */
+interface UserBadgeCountRow {
+  user_id: string;
+}
+
 /** Génère un code ami aléatoire de 8 caractères si l'utilisateur n'en a pas */
 export async function getMyFriendCode(userId: string): Promise<string> {
   // Vérifier si l'utilisateur a déjà un code
@@ -131,9 +162,9 @@ export async function getFriends(userId: string): Promise<{ friends: Friend[]; p
   const friends: Friend[] = [];
   const pending: Friend[] = [];
 
-  const processEntry = (entry: any, otherUserId: string, status: FriendStatus) => {
+  const processEntry = (entry: SentFriendRow | ReceivedFriendRow, otherUserId: string, status: FriendStatus) => {
     if (!entry) return;
-    const u = entry.users ?? entry;
+    const u = entry.users ?? (entry as unknown as FriendUserRow);
     if (!u) return;
 
     const friend: Friend = {
@@ -152,8 +183,8 @@ export async function getFriends(userId: string): Promise<{ friends: Friend[]; p
     else if (status === 'pending') pending.push(friend);
   };
 
-  (sent || []).forEach((s: any) => processEntry(s, s.friend_id, s.status as FriendStatus));
-  (received || []).forEach((r: any) => processEntry(r, r.user_id, r.status as FriendStatus));
+  (sent || []).forEach((s) => processEntry(s as unknown as SentFriendRow, s.friend_id, s.status as FriendStatus));
+  (received || []).forEach((r) => processEntry(r as unknown as ReceivedFriendRow, r.user_id, r.status as FriendStatus));
 
   return { friends, pending };
 }
@@ -234,7 +265,7 @@ export async function getLeaderboard(userId: string): Promise<LeaderboardEntry[]
     .in('user_id', friendIds);
 
   const badgeCountMap: Record<string, number> = {};
-  (badgeCounts || []).forEach((b: any) => {
+  (badgeCounts || []).forEach((b: UserBadgeCountRow) => {
     badgeCountMap[b.user_id] = (badgeCountMap[b.user_id] ?? 0) + 1;
   });
 

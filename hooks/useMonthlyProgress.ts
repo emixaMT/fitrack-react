@@ -9,6 +9,15 @@ import { cancelGoalReminders } from './useGoalReminders';
 
 const MONTHLY_TARGET_DEFAULT = 10;
 
+/** Shape of a users row from Supabase used in realtime updates */
+interface UserRow {
+  name: string | null;
+  monthly_sessions: number | null;
+  monthly_target: number | null;
+  month_key: string | null;
+  [key: string]: unknown;
+}
+
 export const monthKeyNow = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -97,7 +106,7 @@ export function useMonthlyProgress(): MonthlyProgress {
             filter: `id=eq.${userId}`,
           },
           (payload) => {
-            const d = payload.new as any;
+            const d = payload.new as UserRow;
             setUserName(d?.name || userEmail?.split('@')[0] || '');
             setSessions(d?.monthly_sessions ?? 0);
             setTarget(d?.monthly_target ?? MONTHLY_TARGET_DEFAULT);

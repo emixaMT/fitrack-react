@@ -3,6 +3,7 @@ import { supabase } from '../config/supabaseConfig';
 import { BADGE_IMAGES } from '../constants/badgeImages';
 import { getTotalHistoricalSessions, getTotalByType } from './sessionCounterService';
 import type { ImageSourcePropType } from 'react-native';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 // ===================================
 // TYPES
@@ -44,6 +45,23 @@ export interface BadgeStats {
   rare_badges: number;
   epic_badges: number;
   legendary_badges: number;
+}
+
+/** Shape of a seances row used for streak/consecutive-day checks */
+interface SeanceRow {
+  created_at: string;
+  [key: string]: unknown;
+}
+
+/** Shape of a user_badges realtime change payload */
+interface UserBadgePayload {
+  id: string;
+  user_id: string;
+  badge_id: string;
+  unlocked_at: string;
+  progress: number;
+  is_new: boolean;
+  [key: string]: unknown;
 }
 
 // ===================================
@@ -282,7 +300,7 @@ export const markAllBadgesAsSeen = async (userId: string): Promise<void> => {
 /**
  * Vérifie si l'utilisateur a un streak de jours consécutifs
  */
-const checkConsecutiveDays = async (seances: any[], requiredDays: number): Promise<boolean> => {
+const checkConsecutiveDays = async (seances: SeanceRow[], requiredDays: number): Promise<boolean> => {
   if (!seances || seances.length === 0) return false;
 
   // Grouper les séances par date (YYYY-MM-DD)
@@ -605,7 +623,7 @@ export const checkAndUnlockBadges = async (userId: string): Promise<UserBadge[]>
  */
 export const subscribeToUserBadges = (
   userId: string,
-  callback: (payload: any) => void
+  callback: (payload: RealtimePostgresChangesPayload<UserBadgePayload>) => void
 ) => {
   const subscription = supabase
     .channel(`user_badges:${userId}`)

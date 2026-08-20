@@ -17,6 +17,20 @@ import * as ImagePicker from "expo-image-picker";
 type RunningPerf = { label: string; value: string };
 type HyroxPerf = { label: string; value: string; type: "solo" | "double" };
 
+/** Shape of a weight_entries row from Supabase */
+interface WeightEntryRow {
+  date: string;
+  value: number;
+  [key: string]: unknown;
+}
+
+/** Shape of a React Native file asset for Supabase Storage upload */
+interface RNAssetFile {
+  uri: string;
+  type: string;
+  name: string;
+}
+
 export default function EditPerformances() {
   const { colors, isDarkMode } = useTheme();
   const [saving, setSaving] = useState(false);
@@ -90,7 +104,7 @@ export default function EditPerformances() {
           .order("date", { ascending: false });
 
         if (weightsData) {
-          const items = weightsData.map((w: any) => ({
+          const items = weightsData.map((w: WeightEntryRow) => ({
             date: new Date(w.date),
             value: Number(w.value),
           }));
@@ -156,15 +170,15 @@ export default function EditPerformances() {
     try {
       const ext = pickerResult.assets[0].uri.split(".").pop() || "jpg";
       const fileName = `avatars/${user.id}.${ext}`;
-      const file = {
+      const file: RNAssetFile = {
         uri: pickerResult.assets[0].uri,
         type: `image/${ext}`,
         name: fileName,
-      } as any;
+      };
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, file, { upsert: true });
+        .upload(fileName, file as unknown as Blob, { upsert: true });
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -225,7 +239,7 @@ export default function EditPerformances() {
         .order("date", { ascending: false });
 
       if (weightsData) {
-        setWeights(weightsData.map((w: any) => ({
+        setWeights(weightsData.map((w: WeightEntryRow) => ({
           date: new Date(w.date),
           value: Number(w.value),
         })));
