@@ -21,6 +21,7 @@ export default function ExerciseSearchDropdown({ placeholder = 'Rechercher un ex
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<WgerExercise[]>([]);
   const [open, setOpen] = useState(false);
+  const [usingMockData, setUsingMockData] = useState(false);
   const controller = useRef<AbortController | null>(null);
 
   // petit debounce
@@ -33,6 +34,7 @@ useEffect(() => {
 
   setLoading(true);
   setOpen(true);
+  setUsingMockData(false);
 
   if (controller.current) controller.current.abort();
   controller.current = new AbortController();
@@ -74,17 +76,19 @@ useEffect(() => {
       const list = json?.results?.map((e: any) => ({ id: e.id, name: e.name })) ?? [];
 
       // 4) Fallback UI: montrer qq exemples si tout est vide (permet de tester l’UI)
-      setResults(
-        list.length
-          ? list
-          : [
-              { id: -1, name: 'Squat' },
-              { id: -2, name: 'Développé couché' },
-              { id: -3, name: 'Burpees' },
-            ]
-      );
+      if (list.length) {
+        setResults(list);
+      } else {
+        setUsingMockData(true);
+        setResults([
+          { id: -1, name: 'Squat' },
+          { id: -2, name: 'Développé couché' },
+          { id: -3, name: 'Burpees' },
+        ]);
+      }
     } catch (e) {
       // En cas d’erreur, afficher mock pour vérifier que la dropdown s’ouvre
+      setUsingMockData(true);
       setResults([
         { id: -1, name: 'Squat' },
         { id: -2, name: 'Développé couché' },
@@ -121,6 +125,11 @@ useEffect(() => {
 
       {open && results.length > 0 && (
         <View className="absolute left-0 right-0 mt-2 bg-white rounded-xl border border-gray-200 w-full" style={{ maxHeight: 220, zIndex: 50 }}>
+          {usingMockData && (
+            <Text className="px-4 py-2 text-xs text-amber-600 bg-amber-50">
+              API indisponible — exemples affichés
+            </Text>
+          )}
           <View className="py-2" style={{ maxHeight: 220 }}>
             {results.map((ex) => (
               <Pressable

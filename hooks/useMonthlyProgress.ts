@@ -34,7 +34,7 @@ export function useMonthlyProgress(): MonthlyProgress {
   // Auth + init doc + reset mensuel + sync en live
   useEffect(() => {
     if (!user) return;
-    let realtimeChannel: any;
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupUser = async (userId: string, userEmail: string | undefined) => {
       const currentKey = monthKeyNow();

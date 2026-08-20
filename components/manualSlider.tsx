@@ -37,7 +37,7 @@ export default function LastSeancesSlider() {
   };
 
   useEffect(() => {
-    let ch: any;
+    let ch: ReturnType<typeof supabase.channel> | null = null;
     const setup = async (userId: string) => {
       await loadSeancesData(userId);
       ch = supabase.channel(`slider-${userId}`)

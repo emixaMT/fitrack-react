@@ -8,7 +8,7 @@ export function useHeaderAvatar(fallback: ImageSourcePropType) {
   const [source, setSource] = useState<ImageSourcePropType>(fallback);
 
   useEffect(() => {
-    let realtimeChannel: any;
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
     const loadAvatar = async (userId: string) => {
       const { data } = await supabase

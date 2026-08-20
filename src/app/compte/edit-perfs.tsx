@@ -10,22 +10,7 @@ import { supabase } from "../../../config/supabaseConfig";
 import { checkAndUnlockBadges } from "../../../services/badgeService";
 import { router } from "expo-router";
 import { useTheme } from "../../../contexts/ThemeContext";
-
-/* Avatars locaux (on stocke uniquement l'id en base). */
-const AVATAR_POOL: { id: string; src: ImageSourcePropType }[] = [
-  { id: "a1", src: require("../../assets/avatar.png") },
-  { id: "a2", src: require("../../assets/avatar2.png") },
-  { id: "a3", src: require("../../assets/avatar3.png") },
-  { id: "a4", src: require("../../assets/avatar4.png") },
-  { id: "a5", src: require("../../assets/avatar5.png") },
-  { id: "a6", src: require("../../assets/avatar6.png") },
-  { id: "a7", src: require("../../assets/avatar7.png") },
-  { id: "a8", src: require("../../assets/avatar8.png") },
-  { id: "a9", src: require("../../assets/avatar9.png") },
-];
-const DEFAULT_AVATAR = require("../../assets/avatar.png");
-const getAvatarSourceById = (id?: string): ImageSourcePropType =>
-  AVATAR_POOL.find((a) => a.id === id)?.src ?? DEFAULT_AVATAR;
+import { AVATAR_IDS, DEFAULT_AVATAR, getAvatarSourceById } from "../../../constantes/avatars";
 
 type RunningPerf = { label: string; value: string };
 type HyroxPerf = { label: string; value: string; type: "solo" | "double" };
@@ -394,15 +379,15 @@ export default function EditPerformances() {
           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colors.primary, marginBottom: 16, textAlign: 'center' }}>Choisir un avatar</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-              {AVATAR_POOL.map((a) => {
-                const selected = a.id === selectedAvatarId;
+              {AVATAR_IDS.map((id) => {
+                const selected = id === selectedAvatarId;
                 return (
                   <Pressable
-                    key={a.id}
-                    onPress={() => handleSelectAvatar(a.id)}
+                    key={id}
+                    onPress={() => handleSelectAvatar(id)}
                     style={{ width: '30%', aspectRatio: 1, marginBottom: 16, borderRadius: 999, overflow: 'hidden', borderWidth: selected ? 4 : 0, borderColor: colors.primary }}
                   >
-                    <Image source={a.src} style={{ width: '100%', height: '100%' }} />
+                    <Image source={getAvatarSourceById(id)} style={{ width: '100%', height: '100%' }} />
                   </Pressable>
                 );
               })}

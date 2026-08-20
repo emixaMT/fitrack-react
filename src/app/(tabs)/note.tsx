@@ -53,7 +53,7 @@ export default function NotesScreen() {
 
   useEffect(() => {
     if (!user) return;
-    let ch: any;
+    let ch: ReturnType<typeof supabase.channel> | null = null;
     loadNotes(user.id, true);
     ch = supabase.channel(`notes-${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `id_user=eq.${user.id}` },

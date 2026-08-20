@@ -2,6 +2,7 @@
 import { supabase } from '../config/supabaseConfig';
 import { BADGE_IMAGES } from '../constantes/badgeImages';
 import { getTotalHistoricalSessions, getTotalByType } from './sessionCounterService';
+import type { ImageSourcePropType } from 'react-native';
 
 // ===================================
 // TYPES
@@ -17,7 +18,7 @@ export interface Badge {
   description: string | null;
   icon: string | null;
   image_url: string | null; // URL de l'image personnalisée (externe ou Supabase Storage)
-  image_local?: any; // Image locale (require('path/to/image.png'))
+  image_local?: ImageSourcePropType; // Image locale (require('path/to/image.png'))
   category: BadgeCategory | null;
   rarity: BadgeRarity;
   condition_type: string | null;

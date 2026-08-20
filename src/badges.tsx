@@ -13,8 +13,11 @@ import { supabase } from '../config/supabaseConfig';
 import { useBadges } from '../hooks/useBadges';
 import { Badge, BadgeRarity } from '../services/badgeService';
 import { BadgeGrid, BadgeModal, BadgeNotification } from '../components/badges';
+import { useTheme, ThemeColors } from '../contexts/ThemeContext';
 
 export default function BadgesScreen() {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [selectedBadgeUnlocked, setSelectedBadgeUnlocked] = useState(false);
@@ -167,7 +170,7 @@ export default function BadgesScreen() {
       <ScrollView
         style={styles.scrollView}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refresh} tintColor="#F9FAFB" />
+          <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={colors.text} />
         }
       >
         <Text style={styles.sectionTitle}>
@@ -227,10 +230,10 @@ export default function BadgesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: colors.background,
   },
   header: {
     paddingHorizontal: 20,
@@ -240,7 +243,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#F9FAFB',
+    color: colors.text,
     marginBottom: 16,
   },
   statsContainer: {
@@ -253,11 +256,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#F9FAFB',
+    color: colors.text,
   },
   statLabel: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   categoriesContainer: {
@@ -273,11 +276,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#1F2937',
+    backgroundColor: colors.card,
     gap: 6,
   },
   categoryButtonActive: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: colors.primary,
   },
   categoryIcon: {
     fontSize: 16,
@@ -285,10 +288,10 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: colors.textSecondary,
   },
   categoryLabelActive: {
-    color: '#F9FAFB',
+    color: colors.text,
   },
   scrollView: {
     flex: 1,
@@ -296,7 +299,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: colors.textSecondary,
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 12,
@@ -309,7 +312,7 @@ const styles = StyleSheet.create({
   legendTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#F9FAFB',
+    color: colors.text,
     marginBottom: 12,
   },
   legendItems: {
@@ -329,6 +332,6 @@ const styles = StyleSheet.create({
   },
   legendLabel: {
     fontSize: 14,
-    color: '#D1D5DB',
+    color: colors.textSecondary,
   },
 });

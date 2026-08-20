@@ -7,11 +7,12 @@ type WeightEntry = { date: Date; value: number };
 /**
  * Hook pour récupérer l'historique de poids de l'utilisateur connecté
  */
-export function useWeightHistory(): WeightEntry[] {
+export function useWeightHistory(): { weights: WeightEntry[]; error: string | null } {
   const [weights, setWeights] = useState<WeightEntry[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let realtimeChannel: any;
+    let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
     const loadWeights = async (userId: string) => {
       // Charger les données initiales
@@ -23,9 +24,12 @@ export function useWeightHistory(): WeightEntry[] {
 
       if (error) {
         console.error('Error loading weights:', error);
+        setError('Impossible de charger l\'historique de poids.');
         setWeights([]);
         return;
       }
+
+      setError(null);
 
       const items = (data || []).map((entry: any) => ({
         date: new Date(entry.date),
@@ -94,5 +98,5 @@ export function useWeightHistory(): WeightEntry[] {
     };
   }, []);
 
-  return weights;
+  return { weights, error };
 }

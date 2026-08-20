@@ -23,6 +23,7 @@ const DAYS_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) => {
   const [completedDays, setCompletedDays] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth()); // 0-11
   const currentYear = new Date().getFullYear();
   const { colors } = useTheme();
@@ -42,10 +43,17 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
         .eq('user_id', userId)
         .eq('year', currentYear);
 
-      if (!error && data) {
+      if (error) {
+        setError('Impossible de charger les défis. Veuillez réessayer plus tard.');
+        setLoading(false);
+        return;
+      }
+
+      if (data) {
         const days = new Set(data.map((item: CompletedChallenge) => item.day_of_year));
         setCompletedDays(days);
       }
+      setError(null);
       setLoading(false);
     };
 
@@ -249,6 +257,14 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
     return (
       <View style={{ backgroundColor: colors.card, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, padding: 20 }}>
         <Text style={{ color: colors.textSecondary }}>Chargement...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ backgroundColor: colors.card, borderRadius: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, padding: 20, marginVertical: 24 }}>
+        <Text style={{ color: colors.warning, fontSize: 16 }}>{error}</Text>
       </View>
     );
   }

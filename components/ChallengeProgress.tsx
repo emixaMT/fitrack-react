@@ -13,6 +13,7 @@ export const ChallengeProgress: React.FC<ChallengeProgressProps> = ({ userId }) 
   const { colors } = useTheme();
   const [completedCount, setCompletedCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) {
@@ -29,9 +30,16 @@ export const ChallengeProgress: React.FC<ChallengeProgressProps> = ({ userId }) 
         .eq('user_id', userId)
         .eq('year', currentYear);
 
-      if (!error && data) {
+      if (error) {
+        setError('Impossible de charger les défis. Veuillez réessayer plus tard.');
+        setLoading(false);
+        return;
+      }
+
+      if (data) {
         setCompletedCount(data.length);
       }
+      setError(null);
       setLoading(false);
     };
 
@@ -65,6 +73,14 @@ export const ChallengeProgress: React.FC<ChallengeProgressProps> = ({ userId }) 
     return (
       <View style={{ backgroundColor: colors.card, borderRadius: 16, padding: 20 }}>
         <Text style={{ color: colors.textTertiary }}>Chargement...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ backgroundColor: colors.card, borderRadius: 16, padding: 20, marginVertical: 24 }}>
+        <Text style={{ color: colors.warning, fontSize: 16 }}>{error}</Text>
       </View>
     );
   }

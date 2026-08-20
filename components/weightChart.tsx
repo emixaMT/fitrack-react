@@ -7,7 +7,7 @@ import { useTheme } from "../contexts/ThemeContext";
 const screenWidth = Dimensions.get("window").width;
 
 export default function WeightChart() {
-  const weights = useWeightHistory();
+  const { weights, error } = useWeightHistory();
   const { colors, isDarkMode } = useTheme();
 
   const chartConfig = {
@@ -32,7 +32,9 @@ export default function WeightChart() {
       <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: 12 }}>
         Évolution du poids (kg)
       </Text>
-      {weights.length > 0 ? (
+      {error ? (
+        <Text style={{ color: colors.warning, marginTop: 20, fontSize: 14 }}>{error}</Text>
+      ) : weights.length > 0 ? (
         <LineChart
           data={data}
           width={screenWidth - 76}

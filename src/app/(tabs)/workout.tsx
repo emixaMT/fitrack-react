@@ -79,7 +79,7 @@ export default function WorkoutScreen() {
 
   useEffect(() => {
     if (!user) return;
-    let ch: any;
+    let ch: ReturnType<typeof supabase.channel> | null = null;
     loadSeances(user.id, true);
     ch = supabase.channel(`workout-${user.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'seances', filter: `id_user=eq.${user.id}` },
