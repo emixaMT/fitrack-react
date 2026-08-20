@@ -1,7 +1,7 @@
 // FILE: src/app/seances/[id].tsx (mets le chemin exact de ta page détail)
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { View, Text, ScrollView, ActivityIndicator, Image, Pressable } from "react-native";
+import { View, Text, ScrollView, ActivityIndicator, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../../../config/supabaseConfig";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -102,8 +102,8 @@ export default function SeanceDetail() {
         </Pressable>
 
         <View className="flex-1 justify-center items-center">
-          <View className="absolute right-6 bottom-4 opacity-20">
-            <Image source={sport.image} className="w-24 h-24" resizeMode="contain" />
+          <View className="absolute right-6 bottom-4 opacity-30">
+            <Ionicons name={sport.icon as any} size={80} color="white" />
           </View>
           <Text className="text-white text-3xl font-bold pt-12">{seance.nom}</Text>
           <Text className="text-white/80 mt-1">{sport.label}</Text>

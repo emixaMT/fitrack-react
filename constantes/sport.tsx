@@ -3,27 +3,22 @@ export type SportKey = 'musculation' | 'crossfit' | 'running' | 'velo';
 
 export const sportsMeta: Record<SportKey, {
   label: string;
-  icon: any;     // Ionicons name si tu veux, ou PNG
-  image: any;    // require vers ton PNG
+  icon: string;     // Ionicons name — monochrome flat
 }> = {
   musculation: {
     label: 'Musculation',
-    icon: 'barbell-outline',
-    image: require('../src/assets/musculation.png'),
+    icon: 'barbell',
   },
   crossfit: {
     label: 'Crossfit',
-    icon: 'fitness-outline',
-    image: require('../src/assets/crossfit.png'),
+    icon: 'flame',
   },
   running: {
     label: 'Course',
-    icon: 'walk-outline',
-    image: require('../src/assets/running.png'),
+    icon: 'footsteps',
   },
   velo: {
     label: 'Vélo',
-    icon: 'bicycle-outline',
-    image: require('../src/assets/velo.png'),
+    icon: 'bicycle',
   },
 };

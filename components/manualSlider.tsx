@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Dimensions, Image, Pressable } from 'react-native';
+import { View, Text, FlatList, Dimensions, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../config/supabaseConfig';
 import { useTheme } from '../contexts/ThemeContext';
 import { cardShadow } from '../utils/styles';
@@ -9,15 +10,15 @@ const screenWidth = Dimensions.get('window').width;
 
 type Seance = { id: string; nom: string; category?: string };
 
-function getCategoryImage(cat?: string) {
-  const key = (cat || '').toLowerCase();
-  try {
-    if (key === 'musculation') return require('../src/assets/musculation.png');
-    if (key === 'crossfit')    return require('../src/assets/crossfit.png');
-    if (key === 'running')     return require('../src/assets/running.png');
-    if (key === 'velo')        return require('../src/assets/velo.png');
-  } catch {}
-  return require('../src/assets/musculation.png');
+const SPORT_ICONS: Record<string, string> = {
+  musculation: 'barbell',
+  crossfit: 'flame',
+  running: 'footsteps',
+  velo: 'bicycle',
+};
+
+function getSportIcon(cat?: string): string {
+  return SPORT_ICONS[(cat || '').toLowerCase()] || 'fitness';
 }
 
 export default function LastSeancesSlider() {
@@ -80,8 +81,14 @@ export default function LastSeancesSlider() {
                 ...cardShadow(colors, 'sm'),
               }}
             >
-              <Image source={getCategoryImage(item.category)} style={{ width: 64, height: 64 }} resizeMode="contain" />
-              <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600', marginTop: 8, paddingHorizontal: 8 }} numberOfLines={1}>
+              <View style={{
+                width: 48, height: 48, borderRadius: 14,
+                backgroundColor: colors.divider,
+                alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+              }}>
+                <Ionicons name={getSportIcon(item.category) as any} size={26} color={colors.primary} />
+              </View>
+              <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600', paddingHorizontal: 8 }} numberOfLines={1}>
                 {item.nom}
               </Text>
             </Pressable>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, Pressable, Image } from 'react-native';
+import { Modal, View, Text, Pressable } from 'react-native';
 import { sportsMeta, SportKey } from '../constantes/sport';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -44,7 +44,13 @@ export const SessionTypeModal: React.FC<SessionTypeModalProps> = ({ visible, onS
                     ...cardShadow(colors, 'sm'),
                   }}
                 >
-                  <Image source={meta.image} style={{ width: 48, height: 48, marginBottom: 6 }} resizeMode="contain" />
+                  <View style={{
+                    width: 52, height: 52, borderRadius: 16,
+                    backgroundColor: colors.divider,
+                    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+                  }}>
+                    <Ionicons name={meta.icon as any} size={26} color={colors.primary} />
+                  </View>
                   <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13, textAlign: 'center' }}>{meta.label}</Text>
                 </Pressable>
               );

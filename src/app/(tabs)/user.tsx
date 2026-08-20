@@ -408,7 +408,12 @@ export default function UserScreen() {
             <View className="py-6 space-y-6 flex flex-col gap-6">
           {/* SBD */}
           <View style={[cardStyle(colors, 'sm'), { padding: 20 }]}>
-            <Image source={require('../../assets/sbd.png')} className="w-36 h-16 mb-6 mx-auto" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.divider, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="barbell" size={22} color={colors.primary} />
+              </View>
+              <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Force (SBD)</Text>
+            </View>
             <View className="flex-row justify-between">
               <Text style={{ color: colors.textSecondary }}>Squat</Text>
               <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{perfs?.squat ?? '-'} kg</Text>
@@ -432,7 +437,12 @@ export default function UserScreen() {
           {/* Running */}
           {!!perfs?.running?.length && (
             <View style={[cardStyle(colors, 'sm'), { padding: 20 }]}>
-              <Image source={require('../../assets/finishers.png')} className="w-full h-8 mb-6 mx-auto" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.divider, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="footsteps" size={22} color={colors.primary} />
+                </View>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Running</Text>
+              </View>
               {perfs!.running!.map((r, i) => (
                 <View key={i} className="flex-row justify-between">
                   <Text style={{ color: colors.textSecondary }}>{r.label}</Text>
@@ -445,7 +455,12 @@ export default function UserScreen() {
           {/* Hyrox */}
           {!!perfs?.hyrox?.length && (
             <View style={[cardStyle(colors, 'sm'), { padding: 20 }]}>
-              <Image source={require('../../assets/hyrox.webp')} className="w-48 h-16 mb-6 mx-auto" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.divider, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="timer" size={22} color={colors.primary} />
+                </View>
+                <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Hyrox</Text>
+              </View>
               {perfs!.hyrox!.map((h, i) => (
                 <View key={i} className="flex-row justify-between items-center">
                   <View className="flex-row items-center gap-2">

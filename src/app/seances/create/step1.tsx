@@ -1,22 +1,24 @@
 // app/seances/create/step1.tsx
 import { useState } from 'react';
-import { View, Text, Pressable, Image, SafeAreaView } from 'react-native';
+import { View, Text, Pressable, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { sportsMeta, SportKey } from '../../../../constantes/sport';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useTheme } from '../../../../contexts/ThemeContext';
 
 export default function Step1() {
     const router = useRouter();
+    const { colors } = useTheme();
     const [selected, setSelected] = useState<SportKey | null>(null);
 
     return (
-        <SafeAreaView className="w-full flex-col flex-1 bg-white px-6 py-8 justify-center">
-            <Pressable onPress={() => router.push('/workout')} className="p-2 rounded-full bg-gray-100 absolute top-16 left-4">
-                <Ionicons name="arrow-back" size={20} color="#111827" />
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, paddingHorizontal: 24, paddingVertical: 32, justifyContent: 'center' }}>
+            <Pressable onPress={() => router.push('/workout')} style={{ position: 'absolute', top: 60, left: 16, padding: 8, borderRadius: 12, backgroundColor: colors.divider }}>
+                <Ionicons name="arrow-back" size={20} color={colors.text} />
             </Pressable>
-            <Text className="text-center px-4 text-2xl font-semibold text-cyan-900 mb-6">Choisis ton sport</Text>
+            <Text style={{ textAlign: 'center', fontSize: 24, fontWeight: '700', color: colors.text, marginBottom: 24 }}>Choisis ton sport</Text>
 
-            <View className="flex-row flex-wrap justify-between gap-4 px-4">
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 16, paddingHorizontal: 8 }}>
                 {(Object.keys(sportsMeta) as SportKey[]).map((key) => {
                     const meta = sportsMeta[key];
                     const active = selected === key;
@@ -24,11 +26,19 @@ export default function Step1() {
                         <Pressable
                             key={key}
                             onPress={() => setSelected(key)}
-                            className={`w-[45%] rounded-2xl border p-4 items-center ${active ? 'bg-cyan-50 border-cyan-300' : 'border-gray-200'
-                                }`}
+                            style={{
+                                width: '47%', borderRadius: 16, padding: 20, alignItems: 'center',
+                                backgroundColor: active ? colors.divider : colors.card,
+                            }}
                         >
-                            <Image source={meta.image} className="w-16 h-16 mb-2" resizeMode="contain" />
-                            <Text className={active ? 'text-cyan-600 font-semibold' : 'text-gray-700'}>
+                            <View style={{
+                                width: 56, height: 56, borderRadius: 16,
+                                backgroundColor: active ? colors.primary : colors.divider,
+                                alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+                            }}>
+                                <Ionicons name={meta.icon as any} size={28} color={active ? '#fff' : colors.textSecondary} />
+                            </View>
+                            <Text style={{ fontSize: 15, fontWeight: active ? '700' : '500', color: active ? colors.primary : colors.textSecondary }}>
                                 {meta.label}
                             </Text>
                         </Pressable>
@@ -39,10 +49,13 @@ export default function Step1() {
             <Pressable
                 disabled={!selected}
                 onPress={() => router.push({ pathname: '/seances/create/step2', params: { sport: selected! } })}
-                className="px-4 mt-10" // place le bouton
+                style={{ paddingHorizontal: 16, marginTop: 40 }}
             >
-                <View className={`rounded-2xl py-4 px-6 ${selected ? 'bg-cyan-600' : 'bg-cyan-300'}`}>
-                    <Text className="text-center text-white font-semibold">Continuer</Text>
+                <View style={{
+                    borderRadius: 14, paddingVertical: 16, alignItems: 'center',
+                    backgroundColor: selected ? colors.primary : colors.divider,
+                }}>
+                    <Text style={{ color: selected ? '#fff' : colors.textTertiary, fontWeight: '700', fontSize: 16 }}>Continuer</Text>
                 </View>
             </Pressable>
         </SafeAreaView>

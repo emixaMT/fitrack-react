@@ -5,7 +5,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useTheme } from "../../../contexts/ThemeContext";
 import {
   View, Text, Pressable, Platform, ActionSheetIOS, Alert,
-  FlatList, ActivityIndicator, RefreshControl, Image, Dimensions, ScrollView,
+  FlatList, ActivityIndicator, RefreshControl, Dimensions, ScrollView,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { cardStyle } from "../../../utils/styles";
@@ -16,16 +16,16 @@ const screenWidth = Dimensions.get('window').width;
 type Exercice = { nom: string; series?: number; reps?: number; charge?: number };
 type Seance = { id: string; nom: string; id_user: string; category?: string; created_at?: string; exercices: Exercice[] };
 
-const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string; image: any }> = {
-  musculation: { label: 'Musculation', icon: 'barbell', color: '#6366F1', image: require('../../../src/assets/musculation.png') },
-  crossfit: { label: 'Crossfit', icon: 'flame', color: '#f59e0b', image: require('../../../src/assets/crossfit.png') },
-  running: { label: 'Running', icon: 'footsteps', color: '#34c759', image: require('../../../src/assets/running.png') },
-  velo: { label: 'Vélo', icon: 'bicycle', color: '#06b6d4', image: require('../../../src/assets/velo.png') },
+const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
+  musculation: { label: 'Musculation', icon: 'barbell', color: '#6366F1' },
+  crossfit: { label: 'Crossfit', icon: 'flame', color: '#f59e0b' },
+  running: { label: 'Running', icon: 'footsteps', color: '#34c759' },
+  velo: { label: 'Vélo', icon: 'bicycle', color: '#06b6d4' },
 };
 
 function getCatConfig(cat?: string) {
   const key = (cat || '').toLowerCase();
-  return CATEGORY_CONFIG[key] || { label: cat || 'Autre', icon: 'fitness', color: '#8e8e93', image: require('../../../src/assets/musculation.png') };
+  return CATEGORY_CONFIG[key] || { label: cat || 'Autre', icon: 'fitness', color: '#8e8e93' };
 }
 
 function isEndurance(cat?: string) {
@@ -136,9 +136,9 @@ export default function WorkoutScreen() {
         style={[cardStyle(colors, 'sm'), { padding: 16, marginBottom: 10 }]}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          {/* Category image */}
-          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: colors.divider, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <Image source={cat.image} style={{ width: 36, height: 36 }} resizeMode="contain" />
+          {/* Category icon */}
+          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: cat.color + '22', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name={cat.icon as any} size={24} color={cat.color} />
           </View>
 
           <View style={{ flex: 1 }}>

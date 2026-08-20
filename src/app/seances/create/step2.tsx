@@ -4,7 +4,6 @@ import {
   View,
   Text,
   TextInput,
-  Image,
   ScrollView,
   Pressable,
   Alert,
@@ -137,7 +136,13 @@ export default function Step2() {
           {/* header image/tag */}
           {meta && (
             <View className="items-center mb-6">
-              <Image source={meta.image} className="w-32 h-32 mb-2" resizeMode="contain" />
+              <View style={{
+                width: 80, height: 80, borderRadius: 24,
+                backgroundColor: '#0891B2',
+                alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+              }}>
+                <Ionicons name={meta.icon as any} size={40} color="#fff" />
+              </View>
               <Text className="text-cyan-600 font-semibold text-3xl">{meta.label}</Text>
             </View>
           )}
