@@ -9,7 +9,7 @@ import { sportsMeta } from "../../../constantes/sport";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { safeUUID } from "../../../utils/validation";
 import { exportSeance } from "../../../services/seanceIO";
-import { SuccessAnimation } from "../../../components/SuccessAnimation";
+import { Toast } from "../../../components/Toast";
 import React from "react";
 
 type Objectifs = {
@@ -46,7 +46,7 @@ export default function SeanceDetail() {
   const [seance, setSeance] = useState<Seance | null>(null);
   const [loading, setLoading] = useState(true);
   const [seanceId, setSeanceId] = useState<string | null>(null);
-  const [showExportAnim, setShowExportAnim] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   useEffect(() => {
     const safeId = safeUUID(id);
@@ -111,7 +111,7 @@ export default function SeanceDetail() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </Pressable>
         <Pressable
-          onPress={() => { if (seanceId) { exportSeance(seanceId); setShowExportAnim(true); } }}
+          onPress={() => { if (seanceId) { exportSeance(seanceId); setShowToast(true); } }}
           className="absolute top-16 right-4 rounded-full p-2"
           style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
         >
@@ -172,7 +172,7 @@ export default function SeanceDetail() {
         )}
       </View>
     </ScrollView>
-    <SuccessAnimation visible={showExportAnim} type="export" onDone={() => setShowExportAnim(false)} />
+    <Toast message="Séance exportée !" visible={showToast} onDone={() => setShowToast(false)} />
     </>
   );
 }

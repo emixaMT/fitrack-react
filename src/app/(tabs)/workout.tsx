@@ -11,7 +11,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { cardStyle } from "../../../utils/styles";
 import { importSeance, readJsonFile } from "../../../services/seanceIO";
 import * as DocumentPicker from "expo-document-picker";
-import { SuccessAnimation } from "../../../components/SuccessAnimation";
+import { Toast } from "../../../components/Toast";
 
 const PAGE_SIZE = 20;
 const screenWidth = Dimensions.get('window').width;
@@ -51,6 +51,7 @@ export default function WorkoutScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [showImportAnim, setShowImportAnim] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
   const seancesCountRef = useRef(0);
 
   const filteredSeances = filter === 'all' ? allSeances : allSeances.filter(s => (s.category || '').toLowerCase() === filter);
@@ -111,6 +112,7 @@ export default function WorkoutScreen() {
       const content = await readJsonFile(file.uri);
       const res = await importSeance(content, user.id);
       if (res.success) {
+        setToastMsg("Séance importée !");
         setShowImportAnim(true);
         loadSeances(user.id, true);
       } else {
@@ -129,6 +131,7 @@ export default function WorkoutScreen() {
       const text = await file.text();
       const res = await importSeance(text, user.id);
       if (res.success) {
+        setToastMsg("Séance importée !");
         setShowImportAnim(true);
         loadSeances(user.id, true);
       } else {
@@ -330,7 +333,7 @@ export default function WorkoutScreen() {
         />
       )}
 
-      <SuccessAnimation visible={showImportAnim} type="import" onDone={() => setShowImportAnim(false)} />
+      <Toast message={toastMsg} visible={showImportAnim} onDone={() => setShowImportAnim(false)} />
     </>
   );
 }
