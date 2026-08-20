@@ -20,7 +20,8 @@
           "origin": "https://n"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-barcode-scanner"
     ],
     "name": "Fitrack",
     "slug": "fitrack",

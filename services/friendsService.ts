@@ -27,6 +27,92 @@ export type LeaderboardEntry = {
   rank: number;
 };
 
+/** Génère un code ami aléatoire de 8 caractères si l'utilisateur n'en a pas */
+export async function getMyFriendCode(userId: string): Promise<string> {
+  // Vérifier si l'utilisateur a déjà un code
+  const { data } = await supabase
+    .from('users')
+    .select('friend_code')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (data?.friend_code) return data.friend_code;
+
+  // Générer un code unique
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  // Tenter l'update, retry si collision
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { error } = await supabase
+      .from('users')
+      .update({ friend_code: code })
+      .eq('id', userId)
+      .is('friend_code', null);
+
+    if (!error) return code;
+
+    // Régénérer un autre code
+    code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+  }
+
+  return code;
+}
+
+/** Ajoute un ami par son code ami */
+export async function addFriendByCode(userId: string, friendCode: string): Promise<{ success: boolean; message: string }> {
+  const code = friendCode.trim().toUpperCase();
+
+  if (!code || code.length !== 8) {
+    return { success: false, message: 'Code invalide (8 caractères).' };
+  }
+
+  // Trouver l'utilisateur par son code
+  const { data: targetUser, error: findError } = await supabase
+    .from('users')
+    .select('id, name')
+    .eq('friend_code', code)
+    .maybeSingle();
+
+  if (findError || !targetUser) {
+    return { success: false, message: 'Aucun utilisateur avec ce code.' };
+  }
+
+  if (targetUser.id === userId) {
+    return { success: false, message: 'C\'est ton propre code !' };
+  }
+
+  // Vérifier si une relation existe déjà
+  const { data: existing } = await supabase
+    .from('friends')
+    .select('id, status')
+    .or(`and(user_id.eq.${userId},friend_id.eq.${targetUser.id}),and(user_id.eq.${targetUser.id},friend_id.eq.${userId})`)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.status === 'accepted') {
+      return { success: false, message: 'Vous êtes déjà amis.' };
+    }
+    return { success: false, message: 'Demande déjà envoyée.' };
+  }
+
+  const { error } = await supabase
+    .from('friends')
+    .insert({ user_id: userId, friend_id: targetUser.id, status: 'pending' });
+
+  if (error) {
+    return { success: false, message: 'Erreur lors de l\'envoi de la demande.' };
+  }
+
+  return { success: true, message: `Demande envoyée à ${targetUser.name ?? 'l\'utilisateur'}.` };
+}
+
 /** Récupère la liste d'amis (acceptés + en attente) */
 export async function getFriends(userId: string): Promise<{ friends: Friend[]; pending: Friend[] }> {
   // Récupérer les relations d'amitié où l'utilisateur est impliqué
