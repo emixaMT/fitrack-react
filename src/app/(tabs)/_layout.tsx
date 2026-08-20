@@ -34,6 +34,9 @@ export default function TabsLayout() {
           shadowRadius: 8,
         },
         tabBarItemStyle: { paddingVertical: 4 },
+        // Transition douce entre tabs
+        sceneStyle: { backgroundColor: colors.background },
+        animation: 'fade',
       }}
     >
       <Tabs.Screen name="home" options={{ title: 'Accueil', tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} /> }} />

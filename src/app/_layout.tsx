@@ -1,5 +1,5 @@
 import "../global.css";
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
@@ -85,7 +85,22 @@ export default function Layout() {
         <LevelProvider>
           <BadgeUnlockProvider>
             <BadgeChecker />
-            <Slot />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'slide_from_right',
+                animationDuration: 300,
+              }}
+            >
+              <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
+              <Stack.Screen name="seances/[id]" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="seances/create/step1" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="seances/create/step2" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="seances/edit/[id]" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="notes/create" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="compte/edit-perfs" options={{ animation: 'slide_from_right' }} />
+            </Stack>
           </BadgeUnlockProvider>
         </LevelProvider>
       </ThemeProvider>

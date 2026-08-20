@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Alert, Dimensions, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import ProgressBar from '../../../components/progressBar';
@@ -27,6 +28,7 @@ export default function HomeScreen() {
   const { user } = useAuth();
   const { addXP, level, totalXP } = useLevel();
   const { colors } = useTheme();
+  const router = useRouter();
 
   const { sessions, target, progress, monthKey, completed, handleCreateSession } = useMonthlyProgress();
   const { streakDays = 0 } = useStreak(user?.id ?? null) || {};
@@ -242,7 +244,9 @@ export default function HomeScreen() {
         <View style={{ marginTop: 24, marginBottom: 40 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, paddingHorizontal: 4 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>Dernières séances</Text>
-            <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600' }}>Voir tout →</Text>
+            <Pressable onPress={() => router.push('/workout')}>
+              <Text style={{ fontSize: 13, color: colors.primary, fontWeight: '600' }}>Voir tout →</Text>
+            </Pressable>
           </View>
           <ManualSlider />
         </View>
