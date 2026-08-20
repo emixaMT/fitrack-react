@@ -169,17 +169,20 @@ export default function EditPerformances() {
 
     setSavingAvatar(true);
     try {
-      const ext = pickerResult.assets[0].uri.split(".").pop() || "jpg";
+      const asset = pickerResult.assets[0];
+      const ext = asset.uri.split(".").pop() || "jpg";
       const fileName = `avatars/${user.id}.${ext}`;
-      const file: RNAssetFile = {
-        uri: pickerResult.assets[0].uri,
-        type: `image/${ext}`,
-        name: fileName,
-      };
+
+      // Récupérer le blob depuis l'URI locale via fetch
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(fileName, file as unknown as Blob, { upsert: true });
+        .upload(fileName, blob, {
+          upsert: true,
+          contentType: `image/${ext}`,
+        });
 
       if (uploadError) {
         logError("Upload error:", uploadError);
