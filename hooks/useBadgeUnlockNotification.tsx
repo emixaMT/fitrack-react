@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '../config/supabaseConfig';
 import { Badge } from '../services/badgeService';
 
@@ -8,6 +9,14 @@ interface UserBadge {
   is_new: boolean;
   unlocked_at: string;
   badge?: Badge;
+}
+
+interface UserBadgeRow {
+  id: string;
+  badge_id: string;
+  is_new: boolean;
+  unlocked_at: string;
+  badge?: Badge | null;
 }
 
 /**
@@ -35,8 +44,8 @@ export const useBadgeUnlockNotification = (userId: string | null) => {
 
       if (data && data.length > 0) {
         const badges = data
-          .map((ub: any) => ub.badge)
-          .filter((b: any) => b !== null) as Badge[];
+          .map((ub: UserBadgeRow) => ub.badge)
+          .filter((b): b is Badge => b !== null);
         
         if (badges.length > 0) {
           setQueue(badges);
@@ -58,7 +67,7 @@ export const useBadgeUnlockNotification = (userId: string | null) => {
           table: 'user_badges',
           filter: `user_id=eq.${userId}`,
         },
-        async (payload: any) => {
+        async (payload: RealtimePostgresChangesPayload<{ id: string }>) => {
           // Récupérer les détails du badge
           const { data: userBadge } = await supabase
             .from('user_badges')
@@ -66,7 +75,7 @@ export const useBadgeUnlockNotification = (userId: string | null) => {
               *,
               badge:badges(*)
             `)
-            .eq('id', payload.new.id)
+            .eq('id', (payload.new as { id: string }).id)
             .single();
 
           if (userBadge?.badge) {

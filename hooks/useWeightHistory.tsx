@@ -4,6 +4,11 @@ import { supabase } from '../config/supabaseConfig';
 
 type WeightEntry = { date: Date; value: number };
 
+interface WeightEntryRow {
+  date: string;
+  value: number;
+}
+
 /**
  * Hook pour récupérer l'historique de poids de l'utilisateur connecté
  */
@@ -31,7 +36,7 @@ export function useWeightHistory(): { weights: WeightEntry[]; error: string | nu
 
       setError(null);
 
-      const items = (data || []).map((entry: any) => ({
+      const items = (data || []).map((entry: WeightEntryRow) => ({
         date: new Date(entry.date),
         value: Number(entry.value),
       }));
@@ -57,7 +62,7 @@ export function useWeightHistory(): { weights: WeightEntry[]; error: string | nu
               .order('date', { ascending: true });
 
             if (updatedData) {
-              const items = updatedData.map((entry: any) => ({
+              const items = updatedData.map((entry: WeightEntryRow) => ({
                 date: new Date(entry.date),
                 value: Number(entry.value),
               }));

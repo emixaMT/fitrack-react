@@ -20,7 +20,23 @@ import { useExerciseRecords } from '../../../../hooks/useExerciseRecords';
 import React from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
+
+interface SeanceInsertPayload {
+  nom: string;
+  category: SportKey;
+  id_user: string;
+  created_at: string;
+  exercices?: Exercice[];
+  objectifs?: {
+    km: string;
+    vitesse: string;
+    denivele: string;
+    duree?: string;
+  };
+}
 
 export default function Step2() {
   const { colors } = useTheme();
@@ -83,7 +99,7 @@ export default function Step2() {
     if (!session?.user) return;
     
     try {
-      const payload: any = {
+      const payload: SeanceInsertPayload = {
         nom: nomSeance.trim(),
         category: sport,
         id_user: session.user.id,
@@ -151,7 +167,7 @@ export default function Step2() {
                 backgroundColor: colors.primary,
                 alignItems: 'center', justifyContent: 'center', marginBottom: 8,
               }}>
-                <Ionicons name={meta.icon as any} size={40} color="#fff" />
+                <Ionicons name={meta.icon as IoniconName} size={40} color="#fff" />
               </View>
               <Text className="font-semibold text-3xl" style={{ color: colors.primary }}>{meta.label}</Text>
             </View>

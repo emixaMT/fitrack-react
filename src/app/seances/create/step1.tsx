@@ -6,6 +6,8 @@ import { sportsMeta, SportKey } from '../../../../constants/sport';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../../../../contexts/ThemeContext';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
 export default function Step1() {
     const router = useRouter();
     const { colors } = useTheme();
@@ -36,7 +38,7 @@ export default function Step1() {
                                 backgroundColor: active ? colors.primary : colors.divider,
                                 alignItems: 'center', justifyContent: 'center', marginBottom: 10,
                             }}>
-                                <Ionicons name={meta.icon as any} size={28} color={active ? '#fff' : colors.textSecondary} />
+                                <Ionicons name={meta.icon as IoniconName} size={28} color={active ? '#fff' : colors.textSecondary} />
                             </View>
                             <Text style={{ fontSize: 15, fontWeight: active ? '700' : '500', color: active ? colors.primary : colors.textSecondary }}>
                                 {meta.label}

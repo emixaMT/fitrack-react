@@ -6,6 +6,14 @@ import { supabase } from '../config/supabaseConfig';
 import { useTheme } from '../contexts/ThemeContext';
 import { cardShadow } from '../utils/styles';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+interface SeanceRow {
+  id: string;
+  nom: string | null;
+  category?: string | null;
+}
+
 const screenWidth = Dimensions.get('window').width;
 
 type Seance = { id: string; nom: string; category?: string };
@@ -17,8 +25,8 @@ const SPORT_ICONS: Record<string, string> = {
   velo: 'bicycle',
 };
 
-function getSportIcon(cat?: string): string {
-  return SPORT_ICONS[(cat || '').toLowerCase()] || 'fitness';
+function getSportIcon(cat?: string): IoniconName {
+  return (SPORT_ICONS[(cat || '').toLowerCase()] || 'fitness') as IoniconName;
 }
 
 export default function LastSeancesSlider() {
@@ -32,7 +40,7 @@ export default function LastSeancesSlider() {
       .from('seances').select('*').eq('id_user', userId)
       .order('created_at', { ascending: false }).limit(6);
     if (error) { setSeances([]); setLoading(false); return; }
-    setSeances((data || []).map((d: any) => ({ id: d.id, nom: d.nom ?? 'Sans titre', category: d.category })));
+    setSeances((data || []).map((d: SeanceRow) => ({ id: d.id, nom: d.nom ?? 'Sans titre', category: d.category ?? undefined })));
     setLoading(false);
   };
 
@@ -86,7 +94,7 @@ export default function LastSeancesSlider() {
                 backgroundColor: colors.divider,
                 alignItems: 'center', justifyContent: 'center', marginBottom: 8,
               }}>
-                <Ionicons name={getSportIcon(item.category) as any} size={26} color={colors.primary} />
+                <Ionicons name={getSportIcon(item.category)} size={26} color={colors.primary} />
               </View>
               <Text style={{ color: colors.text, fontSize: 13, fontWeight: '600', paddingHorizontal: 8 }} numberOfLines={1}>
                 {item.nom}

@@ -4,6 +4,14 @@ import type { ImageSourcePropType } from "react-native";
 import { supabase } from "../config/supabaseConfig";
 import { getAvatarSourceById } from "../constants/avatars";
 
+interface UserRow {
+  avatar_id?: string | null;
+  photo_url?: string | null;
+  photoURL?: string | null;
+  name?: string | null;
+  email?: string | null;
+}
+
 export function useHeaderAvatar(fallback: ImageSourcePropType) {
   const [source, setSource] = useState<ImageSourcePropType>(fallback);
 
@@ -47,7 +55,7 @@ export function useHeaderAvatar(fallback: ImageSourcePropType) {
             filter: `id=eq.${userId}`,
           },
           (payload) => {
-            const newData = payload.new as any;
+            const newData = payload.new as UserRow;
             if (typeof newData?.avatar_id === "string" && newData.avatar_id) {
               setSource(getAvatarSourceById(newData.avatar_id));
             } else if (newData?.photo_url) {

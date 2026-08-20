@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { cardStyle, cardShadow } from '../utils/styles';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
 interface SessionTypeModalProps {
   visible: boolean;
   onSelect: (category: SportKey) => void;
@@ -49,7 +51,7 @@ export const SessionTypeModal: React.FC<SessionTypeModalProps> = ({ visible, onS
                     backgroundColor: colors.divider,
                     alignItems: 'center', justifyContent: 'center', marginBottom: 8,
                   }}>
-                    <Ionicons name={meta.icon as any} size={26} color={colors.primary} />
+                    <Ionicons name={meta.icon as IoniconName} size={26} color={colors.primary} />
                   </View>
                   <Text style={{ color: colors.text, fontWeight: '600', fontSize: 13, textAlign: 'center' }}>{meta.label}</Text>
                 </Pressable>

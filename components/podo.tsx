@@ -17,7 +17,7 @@ export default function StepCounter() {
   const { colors } = useTheme();
 
   useEffect(() => {
-    let subscription: any = null;
+    let subscription: ReturnType<typeof Pedometer.watchStepCount> | null = null;
     const setupPedometer = async () => {
       try {
         const available = await Pedometer.isAvailableAsync();

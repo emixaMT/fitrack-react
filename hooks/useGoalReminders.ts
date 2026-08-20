@@ -5,6 +5,11 @@ import { Platform } from 'react-native';
 
 const GOAL_TAG = 'goal-3d';
 
+interface ScheduledNotificationWithTag {
+  identifier: string;
+  content: { data?: { tag?: string } };
+}
+
 async function ensurePermissions(): Promise<boolean> {
   if (!Device.isDevice) return false;
   const cur = await Notifications.getPermissionsAsync();
@@ -33,8 +38,8 @@ async function cancelGoalReminders() {
     const all = await Notifications.getAllScheduledNotificationsAsync();
     await Promise.all(
       all
-        .filter(n => (n as any)?.content?.data?.tag === GOAL_TAG)
-        .map(n => Notifications.cancelScheduledNotificationAsync((n as any).identifier))
+        .filter(n => (n as ScheduledNotificationWithTag)?.content?.data?.tag === GOAL_TAG)
+        .map(n => Notifications.cancelScheduledNotificationAsync((n as ScheduledNotificationWithTag).identifier))
     );
   } catch {}
 }
@@ -42,7 +47,7 @@ async function cancelGoalReminders() {
 async function hasGoalReminder(): Promise<boolean> {
   try {
     const all = await Notifications.getAllScheduledNotificationsAsync();
-    return all.some(n => (n as any)?.content?.data?.tag === GOAL_TAG);
+    return all.some(n => (n as ScheduledNotificationWithTag)?.content?.data?.tag === GOAL_TAG);
   } catch {
     return false;
   }
