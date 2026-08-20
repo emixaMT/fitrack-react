@@ -18,7 +18,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   type,
   message,
   onDone,
-  duration = 2200,
+  duration = 1500,
 }) => {
   const { colors } = useTheme();
   const lottieRef = useRef<LottieView>(null);
@@ -37,7 +37,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     };
   }, [visible, duration, onDone]);
 
-  const source = require('../assets/animations/muscle.json');
+  const source = require('../assets/animations/check.json');
 
   const defaultMessage = type === 'export' ? 'Séance exportée !' : 'Séance importée !';
 
