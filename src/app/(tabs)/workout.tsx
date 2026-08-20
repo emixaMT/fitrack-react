@@ -17,7 +17,7 @@ type Exercice = { nom: string; series?: number; reps?: number; charge?: number }
 type Seance = { id: string; nom: string; id_user: string; category?: string; created_at?: string; exercices: Exercice[] };
 
 const CATEGORY_CONFIG: Record<string, { label: string; icon: string; color: string; image: any }> = {
-  musculation: { label: 'Musculation', icon: 'barbell', color: '#22D3EE', image: require('../../../src/assets/musculation.png') },
+  musculation: { label: 'Musculation', icon: 'barbell', color: '#6366F1', image: require('../../../src/assets/musculation.png') },
   crossfit: { label: 'Crossfit', icon: 'flame', color: '#f59e0b', image: require('../../../src/assets/crossfit.png') },
   running: { label: 'Running', icon: 'footsteps', color: '#34c759', image: require('../../../src/assets/running.png') },
   velo: { label: 'Vélo', icon: 'bicycle', color: '#06b6d4', image: require('../../../src/assets/velo.png') },

@@ -14,7 +14,7 @@ import { Badge } from '../../../services/badgeService';
 import { useStreak } from '../../../hooks/useStreak';
 import { StreakFlame } from '../../../components/StreakFlame';
 import { ChallengeCalendar } from '../../../components/ChallengeCalendar';
-import { useTheme } from '../../../contexts/ThemeContext';
+import { useTheme, COLOR_SCHEMES, ColorScheme } from '../../../contexts/ThemeContext';
 import { BadgeTooltipModal } from '../../../components/badges/BadgeTooltipModal';
 import { useLevel } from '../../../contexts/LevelContext';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -55,7 +55,7 @@ export default function UserScreen() {
 
   const { allBadges, userBadges, badgeStats } = useBadges(user?.id ?? null);
   const { streakDays = 0 } = useStreak(user?.id ?? null) || {};
-  const { isDarkMode, toggleDarkMode, colors } = useTheme();
+  const { isDarkMode, toggleDarkMode, colors, colorScheme, setColorScheme } = useTheme();
   const { level, currentXP, xpRequired, progressPercentage, totalXP, loading: levelLoading } = useLevel();
 
   useEffect(() => {
@@ -450,6 +450,63 @@ export default function UserScreen() {
             </View>
           </View>
         )}
+
+        {/* Personnalisation */}
+        <View style={[cardStyle(colors, 'sm'), { padding: 20, marginBottom: 16 }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Ionicons name="color-palette-outline" size={20} color={colors.primary} />
+            <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text }}>Apparence</Text>
+          </View>
+
+          {/* Dark mode toggle */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <Ionicons name={isDarkMode ? "moon" : "sunny"} size={20} color={colors.textSecondary} />
+              <Text style={{ fontSize: 15, color: colors.text }}>Mode sombre</Text>
+            </View>
+            <Pressable
+              onPress={toggleDarkMode}
+              style={{
+                width: 52, height: 30, borderRadius: 15,
+                backgroundColor: isDarkMode ? colors.primary : colors.divider,
+                padding: 3, justifyContent: 'center',
+              }}
+            >
+              <View style={{
+                width: 24, height: 24, borderRadius: 12, backgroundColor: '#fff',
+                transform: [{ translateX: isDarkMode ? 22 : 0 }],
+              }} />
+            </Pressable>
+          </View>
+
+          {/* Color scheme picker */}
+          <Text style={{ fontSize: 13, fontWeight: '600', color: colors.textSecondary, marginBottom: 12 }}>Couleur principale</Text>
+          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 4 }}>
+            {COLOR_SCHEMES.map((s) => {
+              const active = colorScheme === s.key;
+              return (
+                <Pressable
+                  key={s.key}
+                  onPress={() => setColorScheme(s.key as ColorScheme)}
+                  style={{ alignItems: 'center', gap: 6 }}
+                >
+                  <View style={{
+                    width: 40, height: 40, borderRadius: 20,
+                    backgroundColor: s.color,
+                    alignItems: 'center', justifyContent: 'center',
+                    borderWidth: active ? 3 : 0,
+                    borderColor: colors.text,
+                  }}>
+                    {active && <Ionicons name="checkmark" size={20} color="#fff" />}
+                  </View>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: active ? colors.text : colors.textTertiary }}>
+                    {s.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
 
         {/* Bouton de déconnexion */}
         <Pressable

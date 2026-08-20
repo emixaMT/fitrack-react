@@ -192,7 +192,7 @@ export default function WorkoutDistributionChart({ userId }: { userId: string | 
         justifyContent: 'center',
         minHeight: 200,
       }}>
-        <ActivityIndicator size="large" color="#0891B2" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={{ color: colors.textSecondary, marginTop: 8 }}>Chargement des statistiques...</Text>
       </View>
     );

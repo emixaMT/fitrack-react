@@ -151,10 +151,10 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
             onPress={() => setCurrentMonth(prev => (prev === 0 ? 11 : prev - 1))}
             className="p-2"
           >
-            <Ionicons name="chevron-back" size={24} color="#0891B2" />
+            <Ionicons name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
           
-          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0891B2' }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: colors.primary }}>
             {MONTHS[currentMonth]} {currentYear}
           </Text>
           
@@ -162,7 +162,7 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
             onPress={() => setCurrentMonth(prev => (prev === 11 ? 0 : prev + 1))}
             className="p-2"
           >
-            <Ionicons name="chevron-forward" size={24} color="#0891B2" />
+            <Ionicons name="chevron-forward" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
@@ -170,7 +170,7 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
         <View className="flex-row mb-2">
           {DAYS_SHORT.map((day, index) => (
             <View key={index} style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: '#0891B2' }}>{day}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primary }}>{day}</Text>
             </View>
           ))}
         </View>
@@ -197,7 +197,7 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
                       flex: 1,
                       aspectRatio: 1,
                       backgroundColor: isCompleted
-                        ? '#0891B2'
+                        ? colors.primary
                         : isToday
                         ? '#fbbf24'
                         : isPast
@@ -229,7 +229,7 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
         {/* Légende */}
         <View className="flex-row gap-4 mt-4 flex-wrap">
           <View className="flex-row items-center gap-1">
-            <View style={{ width: 16, height: 16, backgroundColor: '#0891B2', borderRadius: 4 }} />
+            <View style={{ width: 16, height: 16, backgroundColor: colors.primary, borderRadius: 4 }} />
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>Complété</Text>
           </View>
           <View className="flex-row items-center gap-1">
@@ -258,11 +258,11 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
       {/* Header avec stats */}
       <View className="flex-row justify-between items-center mb-4">
         <View>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#0891B2' }}>{completedCount} défis</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: colors.primary }}>{completedCount} défis</Text>
           <Text style={{ fontSize: 14, color: colors.textSecondary }}>sur 365 jours</Text>
         </View>
         <View className="items-center">
-          <Text style={{ fontSize: 32, fontWeight: 'bold', color:'#0891B2' }}>{percentage}%</Text>
+          <Text style={{ fontSize: 32, fontWeight: 'bold', color: colors.primary }}>{percentage}%</Text>
           <Text style={{ fontSize: 12, color: colors.textSecondary }}>complété</Text>
         </View>
       </View>

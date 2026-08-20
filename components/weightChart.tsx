@@ -18,7 +18,7 @@ export default function WeightChart() {
       : `rgba(99, 102, 241, ${opacity})`,
     labelColor: () => colors.textSecondary,
     strokeWidth: 2,
-    propsForDots: { r: "3", strokeWidth: "2", stroke: isDarkMode ? "#22D3EE" : "#06B6D4" },
+    propsForDots: { r: "3", strokeWidth: "2", stroke: colors.primary },
     propsForBackgroundLines: { stroke: colors.divider, strokeDasharray: "" },
   };
 
