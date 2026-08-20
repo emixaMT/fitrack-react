@@ -9,6 +9,7 @@ import { sportsMeta } from "../../../constantes/sport";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { safeUUID } from "../../../utils/validation";
 import { exportSeance } from "../../../services/seanceIO";
+import { SuccessAnimation } from "../../../components/SuccessAnimation";
 import React from "react";
 
 type Objectifs = {
@@ -45,6 +46,7 @@ export default function SeanceDetail() {
   const [seance, setSeance] = useState<Seance | null>(null);
   const [loading, setLoading] = useState(true);
   const [seanceId, setSeanceId] = useState<string | null>(null);
+  const [showExportAnim, setShowExportAnim] = useState(false);
 
   useEffect(() => {
     const safeId = safeUUID(id);
@@ -100,6 +102,7 @@ export default function SeanceDetail() {
   const objectifs = normalizeObjectifs(seance.objectifs); // Why: transformer strings → nombres utiles
 
   return (
+    <>
     <ScrollView className="flex-1" style={{ backgroundColor: colors.background }}>
       {/* Bannière + retour */}
       <View className="h-48 w-full relative overflow-hidden">
@@ -108,7 +111,7 @@ export default function SeanceDetail() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </Pressable>
         <Pressable
-          onPress={() => { if (seanceId) exportSeance(seanceId); }}
+          onPress={() => { if (seanceId) { exportSeance(seanceId); setShowExportAnim(true); } }}
           className="absolute top-16 right-4 rounded-full p-2"
           style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
         >
@@ -169,6 +172,8 @@ export default function SeanceDetail() {
         )}
       </View>
     </ScrollView>
+    <SuccessAnimation visible={showExportAnim} type="export" onDone={() => setShowExportAnim(false)} />
+    </>
   );
 }
 

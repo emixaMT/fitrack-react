@@ -11,6 +11,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { cardStyle } from "../../../utils/styles";
 import { importSeance, readJsonFile } from "../../../services/seanceIO";
 import * as DocumentPicker from "expo-document-picker";
+import { SuccessAnimation } from "../../../components/SuccessAnimation";
 
 const PAGE_SIZE = 20;
 const screenWidth = Dimensions.get('window').width;
@@ -49,6 +50,7 @@ export default function WorkoutScreen() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [showImportAnim, setShowImportAnim] = useState(false);
   const seancesCountRef = useRef(0);
 
   const filteredSeances = filter === 'all' ? allSeances : allSeances.filter(s => (s.category || '').toLowerCase() === filter);
@@ -108,8 +110,12 @@ export default function WorkoutScreen() {
       const file = result.assets[0];
       const content = await readJsonFile(file.uri);
       const res = await importSeance(content, user.id);
-      Alert.alert(res.success ? "Import" : "Erreur", res.message);
-      if (res.success) loadSeances(user.id, true);
+      if (res.success) {
+        setShowImportAnim(true);
+        loadSeances(user.id, true);
+      } else {
+        Alert.alert("Erreur", res.message);
+      }
     } catch (e) {
       Alert.alert("Erreur", "Impossible d'importer le fichier.");
     }
@@ -122,8 +128,12 @@ export default function WorkoutScreen() {
     try {
       const text = await file.text();
       const res = await importSeance(text, user.id);
-      Alert.alert(res.success ? "Import" : "Erreur", res.message);
-      if (res.success) loadSeances(user.id, true);
+      if (res.success) {
+        setShowImportAnim(true);
+        loadSeances(user.id, true);
+      } else {
+        Alert.alert("Erreur", res.message);
+      }
     } catch {
       Alert.alert("Erreur", "Impossible de lire le fichier.");
     }
@@ -319,6 +329,8 @@ export default function WorkoutScreen() {
           onChange={handleWebFilePicked}
         />
       )}
+
+      <SuccessAnimation visible={showImportAnim} type="import" onDone={() => setShowImportAnim(false)} />
     </>
   );
 }
