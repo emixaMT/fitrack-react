@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Exec(node)",
+      "Exec(ls)",
+      "Exec(brew)",
+      "Exec(uname)",
+      "Exec(curl)",
+      "Exec(.)",
+      "Exec(npm install)",
+      "Exec(npx expo)",
+      "Exec(npm run)",
+      "Exec(find)",
+      "Exec(cat)",
+      "Exec(grep)"
+    ]
+  }
+}

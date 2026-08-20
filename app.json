@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "scheme": "fitrack",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4f46e5"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "origin": "https://n"
+        }
+      ]
+    ],
+    "name": "Fitrack",
+    "slug": "fitrack",
+    "extra": {
+      "router": {
+        "origin": "https://n"
+      },
+      "eas": {
+        "projectId": "4a0ddfd8-b0f8-4cfa-bd88-ff8823719714"
+      }
+    },
+    "android": {
+      "package": "com.maximethonneau.fitrack",
+      "permissions": [
+        "ACTIVITY_RECOGNITION"
+      ],
+      "softwareKeyboardLayoutMode": "pan",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#4f46e5"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.maximethonneau.fitrack",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "owner": "oxiiz"
+  }
+}
