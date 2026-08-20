@@ -82,6 +82,7 @@ export default function CreateNote() {
             placeholderTextColor={colors.textTertiary}
             multiline
             textAlignVertical="top"
+            maxLength={1000}
             style={{
               minHeight: 220,
               borderColor: colors.border,

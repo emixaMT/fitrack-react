@@ -6,6 +6,16 @@ import { Platform } from "react-native";
 import { useEffect } from "react";
 import React from "react";
 
+// Sécurité: désactiver tous les logs en production
+if (!__DEV__) {
+  const noop = () => {};
+  console.log = noop;
+  console.warn = noop;
+  console.error = noop;
+  console.info = noop;
+  console.debug = noop;
+}
+
 import { checkAndUnlockBadges } from "../../services/badgeService";
 import { ThemeProvider } from "../../contexts/ThemeContext";
 import { LevelProvider } from "../../contexts/LevelContext";

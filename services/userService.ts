@@ -1,4 +1,5 @@
 import { supabase } from '../config/supabaseConfig';
+import { isValidUUID } from '../utils/validation';
 
 export type UserProfile = {
   id?: string;
@@ -13,25 +14,37 @@ export type UserProfile = {
   uid?: string;
   created_at?: string;
   updated_at?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 async function findUserDoc(uid: string): Promise<UserProfile | null> {
-  // Recherche dans la table users avec l'id ou le champ uid
-  const { data, error } = await supabase
+  // Valider que uid est un UUID valide pour éviter l'injection
+  if (!isValidUUID(uid)) return null;
+
+  // Recherche sécurisée: deux requêtes séparées au lieu de .or() avec template literal
+  const { data: byId, error: errId } = await supabase
     .from('users')
     .select('*')
-    .or(`id.eq.${uid},uid.eq.${uid}`)
-    .limit(1)
-    .single();
+    .eq('id', uid)
+    .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') {
-    // PGRST116 = pas de ligne trouvée
-    console.error('Error fetching user:', error);
+  if (errId) {
+    console.error('Error fetching user by id:', errId);
+  }
+  if (byId) return byId as UserProfile;
+
+  const { data: byUid, error: errUid } = await supabase
+    .from('users')
+    .select('*')
+    .eq('uid', uid)
+    .maybeSingle();
+
+  if (errUid) {
+    console.error('Error fetching user by uid:', errUid);
     return null;
   }
 
-  return data as UserProfile | null;
+  return byUid as UserProfile | null;
 }
 
 function parseActive(data: UserProfile | undefined): boolean | undefined {

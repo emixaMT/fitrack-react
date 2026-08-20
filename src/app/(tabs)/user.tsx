@@ -1,6 +1,6 @@
 // FILE: src/app/(tabs)/user.tsx
 import React, { useEffect, useState, useRef } from 'react';
-import { Image, Pressable, View, Text, ScrollView, ActivityIndicator, Alert, TouchableOpacity, Dimensions } from 'react-native';
+import { Image, Pressable, View, Text, ScrollView, ActivityIndicator, Alert, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
 import { router, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../config/supabaseConfig';
@@ -93,6 +93,13 @@ export default function UserScreen() {
     return () => { mounted = false; };
   }, [user?.id]);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 800);
+  };
+
   const handleTabChange = (tab: 'performances' | 'success') => {
     setActiveTab(tab);
   };
@@ -122,7 +129,11 @@ export default function UserScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+    >
       {/* Header with blobs */}
       <View style={{ backgroundColor: colors.primary, paddingTop: 50, paddingHorizontal: 20, paddingBottom: 60, overflow: 'hidden', position: 'relative' }}>
         {/* Decorative blobs */}

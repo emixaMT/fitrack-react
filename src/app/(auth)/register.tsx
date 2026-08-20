@@ -6,6 +6,7 @@ import { register } from "../../../services/supabaseAuth";
 import { useTheme } from "../../../contexts/ThemeContext";
 import React from "react";
 import { router } from "expo-router";
+import { PASSWORD_REGEX } from '../../utils/validation';
 
 export default function RegisterScreen() {
   const { colors } = useTheme();
@@ -18,7 +19,10 @@ export default function RegisterScreen() {
     const e = email.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(e)) { Alert.alert('Email invalide', 'Email invalide.'); return; }
-    if (password.length < 8) { Alert.alert('Mot de passe', 'Minimum 8 caractères.'); return; }
+    if (!PASSWORD_REGEX.test(password)) {
+      Alert.alert('Mot de passe faible', 'Minimum 8 caractères avec majuscule, minuscule, chiffre et caractère spécial.');
+      return;
+    }
     setSubmitting(true);
     try {
       const userCredential = await register(e, password);
@@ -30,7 +34,7 @@ export default function RegisterScreen() {
       if (profileError) { Alert.alert("Attention", "Compte créé mais profil non sauvegardé: " + profileError.message); }
       Alert.alert("Succès", "Compte créé ! Connecte-toi.", [{ text: "OK", onPress: () => router.replace('/(auth)') }]);
     } catch (error: unknown) {
-      Alert.alert("Erreur", error instanceof Error ? error.message : "Une erreur est survenue");
+      Alert.alert("Erreur", "Une erreur est survenue. Veuillez réessayer.");
     } finally { setSubmitting(false); }
   };
 

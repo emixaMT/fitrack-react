@@ -131,7 +131,7 @@ export default function EditPerformances() {
       Alert.alert("Succès", "Photo mise à jour !");
     } catch (e: unknown) {
       console.error("Avatar error:", e);
-      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible de mettre à jour l'avatar.");
+      Alert.alert("Erreur", "Impossible de mettre à jour l'avatar.");
     } finally { setSavingAvatar(false); }
   }
 
@@ -140,6 +140,7 @@ export default function EditPerformances() {
     if (!user) { Alert.alert("Session requise", "Veuillez vous reconnecter."); return; }
     const value = parseFloat(newWeight);
     if (Number.isNaN(value)) { Alert.alert("Erreur", "Veuillez entrer un poids valide."); return; }
+    if (value < 20 || value > 300) { Alert.alert("Erreur", "Le poids doit être entre 20 et 300 kg."); return; }
     try {
       const { error } = await supabase
         .from("weight_entries")
@@ -170,7 +171,7 @@ export default function EditPerformances() {
       }
     } catch (e: unknown) {
       console.error("Weight error:", e);
-      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible d'ajouter le poids.");
+      Alert.alert("Erreur", "Impossible d'ajouter le poids.");
     }
   };
 
@@ -203,7 +204,7 @@ export default function EditPerformances() {
       router.push("/user");
     } catch (e: unknown) {
       console.error("Save error:", e);
-      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible de sauvegarder.");
+      Alert.alert("Erreur", "Impossible de sauvegarder.");
     }
     finally { setSaving(false); }
   };
@@ -288,6 +289,7 @@ export default function EditPerformances() {
                 placeholder="Ton nom"
                 placeholderTextColor={colors.textTertiary}
                 style={{ ...inputStyle, flex: 1 }}
+                maxLength={50}
               />
               <Pressable
                 onPress={async () => {

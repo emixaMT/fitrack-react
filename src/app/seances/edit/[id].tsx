@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../../../config/supabaseConfig";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "../../../../contexts/ThemeContext";
+import { safeUUID } from "../../../../utils/validation";
 
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
 type Seance = { nom: string; id_user: string; exercices: Exercice[] };
@@ -40,12 +41,18 @@ export default function EditSeanceScreen() {
   // ---------- Fetch doc ----------
   useEffect(() => {
     let mounted = true;
+    const safeId = safeUUID(id);
+    if (!safeId) { router.back(); return; }
     const load = async () => {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { router.back(); return; }
+
         const { data, error } = await supabase
           .from("seances")
           .select("*")
-          .eq("id", String(id))
+          .eq("id", safeId)
+          .eq("id_user", user.id)
           .single();
 
         if (error || !data) {

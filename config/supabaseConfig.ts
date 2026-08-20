@@ -1,6 +1,7 @@
 // FILE: config/supabaseConfig.ts
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -16,18 +17,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// HTTPS enforcement — refuser les URLs non-HTTPS
+if (!supabaseUrl.startsWith('https://')) {
+  throw new Error('Supabase URL must use HTTPS');
+}
+
 // Configuration du storage selon la plateforme
-const authStorage = Platform.OS === 'web' 
-  ? undefined // Supabase utilise localStorage par défaut sur web
+// - Web: localStorage (par défaut Supabase)
+// - Mobile: SecureStore (chiffré par le système)
+const authStorage = Platform.OS === 'web'
+  ? undefined
   : {
       getItem: async (key: string) => {
-        return await AsyncStorage.getItem(key);
+        return await SecureStore.getItemAsync(key);
       },
       setItem: async (key: string, value: string) => {
-        await AsyncStorage.setItem(key, value);
+        await SecureStore.setItemAsync(key, value);
       },
       removeItem: async (key: string) => {
-        await AsyncStorage.removeItem(key);
+        await SecureStore.deleteItemAsync(key);
       },
     };
 

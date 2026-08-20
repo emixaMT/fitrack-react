@@ -19,6 +19,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [attempts, setAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -33,15 +35,23 @@ export default function LoginScreen() {
   async function handleLogin() {
     const e = email.trim();
     if (!e || !password) { Alert.alert('Champs requis', 'Email et mot de passe obligatoires.'); return; }
+    if (lockedUntil && Date.now() < lockedUntil) { Alert.alert('Trop de tentatives', 'Réessayez dans 5 minutes.'); return; }
     setSubmitting(true);
     try {
       const cred = await login(e, password);
       const status = await checkUserStatus(cred.user.uid);
       if (!status.exists) { Alert.alert('Profil introuvable', 'Aucun profil associé.'); return; }
       if (status.active === false) { Alert.alert('Compte non activé', 'Compte non activé.'); return; }
+      setAttempts(0);
+      setLockedUntil(null);
       router.replace('/home');
     } catch (err) {
-      Alert.alert('Erreur', err instanceof Error ? err.message : 'Échec');
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      if (newAttempts >= 5) {
+        setLockedUntil(Date.now() + 5 * 60 * 1000);
+      }
+      Alert.alert('Erreur', 'Échec de la connexion. Vérifiez vos identifiants.');
     } finally { setSubmitting(false); }
   }
 
@@ -66,6 +76,12 @@ export default function LoginScreen() {
       if (!result.success) return;
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) { Alert.alert('Session requise', 'Connecte-toi d\'abord.'); return; }
+      const expiresAt = session.expires_at;
+      if (expiresAt && Date.now() / 1000 > expiresAt) {
+        await supabase.auth.signOut();
+        Alert.alert('Session expirée', 'Veuillez vous reconnecter.');
+        return;
+      }
       const exists = await checkUserExists(session.user.id);
       if (!exists) { Alert.alert('Erreur', 'Compte non activé.'); return; }
       router.replace('/home');

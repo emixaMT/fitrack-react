@@ -7,6 +7,7 @@ import { supabase } from "../../../config/supabaseConfig";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { sportsMeta } from "../../../constantes/sport";
 import { useTheme } from "../../../contexts/ThemeContext";
+import { safeUUID } from "../../../utils/validation";
 import React from "react";
 
 type Objectifs = {
@@ -44,13 +45,14 @@ export default function SeanceDetail() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    const safeId = safeUUID(id);
+    if (!safeId) { router.back(); return; }
     (async () => {
       try {
         const { data, error } = await supabase
           .from('seances')
           .select('*')
-          .eq('id', String(id))
+          .eq('id', safeId)
           .single();
 
         if (error || !data) {

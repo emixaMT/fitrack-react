@@ -19,7 +19,8 @@
         {
           "origin": "https://n"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "name": "Fitrack",
     "slug": "fitrack",

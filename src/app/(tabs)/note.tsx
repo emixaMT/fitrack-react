@@ -83,7 +83,9 @@ export default function NotesScreen() {
       { text: "Annuler", style: "cancel" },
       { text: "Supprimer", style: "destructive", onPress: async () => {
         try {
-          const { error } = await supabase.from('notes').delete().eq('id', noteId);
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) { Alert.alert("Session requise", "Veuillez vous reconnecter."); return; }
+          const { error } = await supabase.from('notes').delete().eq('id', noteId).eq('id_user', user.id);
           if (error) throw error;
           closeModal();
           setNotes(prev => { const n = prev.filter(note => note.id !== noteId); notesCountRef.current = n.length; return n; });

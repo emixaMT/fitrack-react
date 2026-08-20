@@ -204,6 +204,7 @@ export default function Step2() {
                   className="border rounded-xl px-4 py-3 mb-3"
                   style={{ borderColor: colors.border, backgroundColor: colors.divider, color: colors.text }}
                   placeholderTextColor={colors.textTertiary}
+                  maxLength={50}
                 />
 
                 <View className="flex-row justify-between">

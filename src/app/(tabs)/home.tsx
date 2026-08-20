@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView, Alert, Dimensions, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Dimensions, Image, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -76,7 +76,7 @@ export default function HomeScreen() {
       setChallengeCompleted(true);
       setModalVisible(false);
     } catch (e: unknown) {
-      Alert.alert('Erreur', e instanceof Error ? e.message : 'Erreur');
+      Alert.alert('Erreur', 'Une erreur est survenue.');
     }
   }
 
@@ -86,9 +86,21 @@ export default function HomeScreen() {
   const userName = user?.email?.split('@')[0] ?? 'Athlète';
   const FALLBACK = require('../../../src/assets/fallback.png');
   const { source: avatarSource } = useHeaderAvatar(FALLBACK);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // Le re-render des hooks (useStreak, useLevel, useMonthlyProgress) se fait via les subscriptions realtime
+    // On force juste un délai minimal pour l'UX
+    setTimeout(() => setRefreshing(false), 800);
+  };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.background }} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+    >
       {/* Header with blobs */}
       <View style={{ backgroundColor: colors.primary, paddingTop: 50, paddingHorizontal: 20, paddingBottom: 60, overflow: 'hidden', position: 'relative' }}>
         {/* Decorative blobs */}

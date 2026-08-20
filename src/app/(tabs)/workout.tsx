@@ -96,8 +96,10 @@ export default function WorkoutScreen() {
       { text: "Annuler", style: "cancel" },
       { text: "Supprimer", style: "destructive", onPress: async () => {
         try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) { Alert.alert("Session requise", "Veuillez vous reconnecter."); return; }
           setAllSeances(prev => { const n = prev.filter(s => s.id !== id); seancesCountRef.current = n.length; return n; });
-          const { error } = await supabase.from('seances').delete().eq('id', id);
+          const { error } = await supabase.from('seances').delete().eq('id', id).eq('id_user', user.id);
           if (error) throw error;
         } catch { if (user) loadSeances(user.id, true); }
       }},
