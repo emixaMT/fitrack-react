@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, Alert, Platform } from 'react-native';
+import { View, Text, Alert, Platform, ActivityIndicator } from 'react-native';
 import { Pedometer } from 'expo-sensors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProgressBar from './progressBar';
@@ -13,6 +13,7 @@ export default function StepCounter() {
   const [steps, setSteps] = useState<number>(0);
   const [isAvailable, setIsAvailable] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [initializing, setInitializing] = useState<boolean>(true);
   const { colors } = useTheme();
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function StepCounter() {
           setSteps((prev) => { const n = prev + result.steps; AsyncStorage.setItem(STEPS_STORAGE_KEY, n.toString()); return n; });
         });
       } catch (err) { console.error('Podo:', err); setError('Erreur'); }
+      finally { setInitializing(false); }
     };
     setupPedometer();
     return () => { if (subscription) subscription.remove(); };
@@ -51,7 +53,12 @@ export default function StepCounter() {
       <Text style={{ fontSize: 12, fontWeight: '600', color: colors.textSecondary, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
         Pas
       </Text>
-      {error ? (
+      {initializing ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={{ fontSize: 13, color: colors.textTertiary, marginLeft: 8 }}>Initialisation...</Text>
+        </View>
+      ) : error ? (
         <Text style={{ fontSize: 13, color: colors.textTertiary, textAlign: 'center' }}>{error}</Text>
       ) : (
         <>

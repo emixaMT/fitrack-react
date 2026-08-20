@@ -184,8 +184,8 @@ export function useMonthlyProgress(): MonthlyProgress {
       if (streakError && streakError.code !== '23505') {
         if (__DEV__) console.warn('Streak history error:', streakError.message);
       }
-    } catch (e: any) {
-      Alert.alert('Erreur', e?.message ?? "Impossible d'incrémenter l'objectif.");
+    } catch (e: unknown) {
+      Alert.alert('Erreur', e instanceof Error ? e.message : "Impossible d'incrémenter l'objectif.");
       // Recharger en cas d'erreur
       const { data: userData } = await supabase
         .from('users')

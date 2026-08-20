@@ -29,8 +29,8 @@ export default function RegisterScreen() {
       });
       if (profileError) { Alert.alert("Attention", "Compte créé mais profil non sauvegardé: " + profileError.message); }
       Alert.alert("Succès", "Compte créé ! Connecte-toi.", [{ text: "OK", onPress: () => router.replace('/(auth)') }]);
-    } catch (error: any) {
-      Alert.alert("Erreur", error.message);
+    } catch (error: unknown) {
+      Alert.alert("Erreur", error instanceof Error ? error.message : "Une erreur est survenue");
     } finally { setSubmitting(false); }
   };
 

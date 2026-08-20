@@ -2,6 +2,7 @@
 import React from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, TextInput, Text, Pressable, ActivityIndicator } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
 
 type WgerExercise = {
   id: number;
@@ -17,8 +18,9 @@ type Props = {
 };
 
 export default function ExerciseSearchDropdown({ placeholder = 'Rechercher un exercice…', onPick }: Props) {
+  const { colors } = useTheme();
   const [query, setQuery] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<WgerExercise[]>([]);
   const [open, setOpen] = useState(false);
   const [usingMockData, setUsingMockData] = useState(false);
@@ -32,7 +34,7 @@ useEffect(() => {
     return;
   }
 
-  setLoading(true);
+  setSearching(true);
   setOpen(true);
   setUsingMockData(false);
 
@@ -95,7 +97,7 @@ useEffect(() => {
         { id: -3, name: 'Burpees' },
       ]);
     } finally {
-      setLoading(false);
+      setSearching(false);
     }
   }, 350);
 
@@ -117,14 +119,19 @@ useEffect(() => {
           if (results.length > 0) setOpen(true);
         }}
       />
-      {loading && (
+      {searching && (
         <View className="absolute right-3 top-3">
-          <ActivityIndicator />
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
       )}
 
       {open && results.length > 0 && (
         <View className="absolute left-0 right-0 mt-2 bg-white rounded-xl border border-gray-200 w-full" style={{ maxHeight: 220, zIndex: 50 }}>
+          {searching && (
+            <View className="flex-row items-center justify-center py-2">
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          )}
           {usingMockData && (
             <Text className="px-4 py-2 text-xs text-amber-600 bg-amber-50">
               API indisponible — exemples affichés

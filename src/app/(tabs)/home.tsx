@@ -75,8 +75,8 @@ export default function HomeScreen() {
       }
       setChallengeCompleted(true);
       setModalVisible(false);
-    } catch (e: any) {
-      Alert.alert('Erreur', e?.message ?? 'Erreur');
+    } catch (e: unknown) {
+      Alert.alert('Erreur', e instanceof Error ? e.message : 'Erreur');
     }
   }
 

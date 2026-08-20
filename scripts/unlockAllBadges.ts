@@ -56,8 +56,8 @@ async function unlockAllBadgesForUser() {
         console.log(`ℹ️  Badge "${badgeCode}" déjà débloqué`);
         alreadyUnlockedCount++;
       }
-    } catch (error: any) {
-      console.error(`❌ Erreur pour "${badgeCode}":`, error.message);
+    } catch (error: unknown) {
+      console.error(`❌ Erreur pour "${badgeCode}":`, error instanceof Error ? error.message : 'Unknown error');
       errorCount++;
     }
     

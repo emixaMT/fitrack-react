@@ -129,9 +129,9 @@ export default function EditPerformances() {
       setAvatarSource(getAvatarSourceById(id));
       setAvatarSheetVisible(false);
       Alert.alert("Succès", "Photo mise à jour !");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Avatar error:", e);
-      Alert.alert("Erreur", e?.message ?? "Impossible de mettre à jour l'avatar.");
+      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible de mettre à jour l'avatar.");
     } finally { setSavingAvatar(false); }
   }
 
@@ -168,9 +168,9 @@ export default function EditPerformances() {
           value: Number(w.value),
         })));
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Weight error:", e);
-      Alert.alert("Erreur", e?.message ?? "Impossible d'ajouter le poids.");
+      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible d'ajouter le poids.");
     }
   };
 
@@ -201,9 +201,9 @@ export default function EditPerformances() {
 
       Alert.alert("Données mises à jour.");
       router.push("/user");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Save error:", e);
-      Alert.alert("Erreur", e?.message ?? "Impossible de sauvegarder.");
+      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible de sauvegarder.");
     }
     finally { setSaving(false); }
   };
