@@ -124,9 +124,23 @@ export default function UserScreen() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} showsVerticalScrollIndicator={false}>
-      {/* Header solid color — full width, rich */}
-      <View style={{ backgroundColor: colors.primary, paddingTop: 50, paddingHorizontal: 20, paddingBottom: 60 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+      {/* Header with blobs */}
+      <View style={{ backgroundColor: colors.primary, paddingTop: 50, paddingHorizontal: 20, paddingBottom: 60, overflow: 'hidden', position: 'relative' }}>
+        {/* Decorative blobs */}
+        <View style={{
+          position: 'absolute', top: -20, left: -30, width: 130, height: 130,
+          borderRadius: 65, backgroundColor: 'rgba(255,255,255,0.08)',
+        }} />
+        <View style={{
+          position: 'absolute', top: 30, left: 70, width: 70, height: 70,
+          borderRadius: 35, backgroundColor: 'rgba(255,255,255,0.06)',
+        }} />
+        <View style={{
+          position: 'absolute', bottom: -50, right: -20, width: 150, height: 150,
+          borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.05)',
+        }} />
+
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, zIndex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
             <HeroAvatarInline size={56} />
             <View>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, ScrollView, Alert, Dimensions } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Dimensions, Image } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import ProgressBar from '../../../components/progressBar';
@@ -13,6 +13,7 @@ import { DailyChallengeModal } from '../../../components/DailyChallengeModal';
 import { useTheme } from '../../../contexts/ThemeContext';
 import { useLevel } from '../../../contexts/LevelContext';
 import { useAuth } from '../../../contexts/AuthContext';
+import { useHeaderAvatar } from '../../../hooks/useHeaderAvatar';
 import { SessionTypeModal } from '../../../components/SessionTypeModal';
 import { useMonthlyProgress } from '../../../hooks/useMonthlyProgress';
 import { useGoalReminders } from '../../../hooks/useGoalReminders';
@@ -81,15 +82,35 @@ export default function HomeScreen() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
   const userName = user?.email?.split('@')[0] ?? 'Athlète';
+  const FALLBACK = require('../../../src/assets/fallback.png');
+  const { source: avatarSource } = useHeaderAvatar(FALLBACK);
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} showsVerticalScrollIndicator={false}>
-      {/* Header solid color — full width */}
-      <View style={{ backgroundColor: colors.primary, paddingTop: 50, paddingHorizontal: 20, paddingBottom: 60 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <View>
-            <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', fontWeight: '500' }}>{greeting}</Text>
-            <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff' }}>{userName}</Text>
+      {/* Header with blobs */}
+      <View style={{ backgroundColor: colors.primary, paddingTop: 50, paddingHorizontal: 20, paddingBottom: 60, overflow: 'hidden', position: 'relative' }}>
+        {/* Decorative blobs */}
+        <View style={{
+          position: 'absolute', top: -30, right: -20, width: 120, height: 120,
+          borderRadius: 60, backgroundColor: 'rgba(255,255,255,0.08)',
+        }} />
+        <View style={{
+          position: 'absolute', top: 20, right: 60, width: 80, height: 80,
+          borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.06)',
+        }} />
+        <View style={{
+          position: 'absolute', bottom: -40, left: -30, width: 140, height: 140,
+          borderRadius: 70, backgroundColor: 'rgba(255,255,255,0.05)',
+        }} />
+
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, zIndex: 1 }}>
+          {/* Avatar + greeting */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <Image source={avatarSource} style={{ width: 48, height: 48, borderRadius: 24 }} resizeMode="cover" />
+            <View>
+              <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '500' }}>{greeting}</Text>
+              <Text style={{ fontSize: 22, fontWeight: '800', color: '#fff' }}>{userName}</Text>
+            </View>
           </View>
           <LevelBadge level={level} size="large" />
         </View>
