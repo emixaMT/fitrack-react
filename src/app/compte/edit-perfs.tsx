@@ -1,4 +1,4 @@
-// FILE: src/app/(tabs)/edit-performances.tsx
+// FILE: src/app/compte/edit-perfs.tsx
 import React, { useState, useEffect } from "react";
 import {
   View, Text, TextInput, ScrollView, Pressable, Alert,
@@ -9,9 +9,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../../config/supabaseConfig";
 import { checkAndUnlockBadges } from "../../../services/badgeService";
 import { router } from "expo-router";
+import { useTheme } from "../../../contexts/ThemeContext";
 
-/* Avatars locaux (on stocke uniquement l'id en base). 
-   Remplace les require(...) par tes vrais fichiers si tu en as 9 différents. */
+/* Avatars locaux (on stocke uniquement l'id en base). */
 const AVATAR_POOL: { id: string; src: ImageSourcePropType }[] = [
   { id: "a1", src: require("../../assets/avatar.png") },
   { id: "a2", src: require("../../assets/avatar2.png") },
@@ -31,6 +31,7 @@ type RunningPerf = { label: string; value: string };
 type HyroxPerf = { label: string; value: string; type: "solo" | "double" };
 
 export default function EditPerformances() {
+  const { colors, isDarkMode } = useTheme();
   const [saving, setSaving] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [squat, setSquat] = useState("");
@@ -57,7 +58,6 @@ export default function EditPerformances() {
         return;
       }
 
-      // Load performances
       try {
         const { data: perfData } = await supabase
           .from("performances")
@@ -76,7 +76,6 @@ export default function EditPerformances() {
         console.error("Error loading performances:", e);
       }
 
-      // Load user profile (avatar + name)
       try {
         const { data: userData, error: userError } = await supabase
           .from("users")
@@ -96,7 +95,6 @@ export default function EditPerformances() {
         console.error("Error loading user profile:", e);
       }
 
-      // Load weights
       try {
         const { data: weightsData } = await supabase
           .from("weight_entries")
@@ -136,12 +134,12 @@ export default function EditPerformances() {
         .from("users")
         .update({ avatar_id: id, photo_url: id })
         .eq("id", user.id);
-      
+
       if (error) {
         console.error("Avatar update error:", error);
         throw error;
       }
-      
+
       setSelectedAvatarId(id);
       setAvatarSource(getAvatarSourceById(id));
       setAvatarSheetVisible(false);
@@ -161,35 +159,33 @@ export default function EditPerformances() {
       const { error } = await supabase
         .from("weight_entries")
         .insert({ user_id: user.id, value, date: new Date().toISOString() });
-      
+
       if (error) {
         console.error("Weight insert error:", error);
         throw error;
       }
-      
+
       setNewWeight("");
-      
-      // Vérifier et débloquer les badges automatiquement
+
       await checkAndUnlockBadges(user.id);
-      
+
       Alert.alert("Succès", "Poids ajouté !");
-      
-      // Reload weights
+
       const { data: weightsData } = await supabase
         .from("weight_entries")
         .select("*")
         .eq("user_id", user.id)
         .order("date", { ascending: false });
-      
+
       if (weightsData) {
         setWeights(weightsData.map((w: any) => ({
           date: new Date(w.date),
           value: Number(w.value),
         })));
       }
-    } catch (e: any) { 
+    } catch (e: any) {
       console.error("Weight error:", e);
-      Alert.alert("Erreur", e?.message ?? "Impossible d'ajouter le poids."); 
+      Alert.alert("Erreur", e?.message ?? "Impossible d'ajouter le poids.");
     }
   };
 
@@ -210,20 +206,19 @@ export default function EditPerformances() {
         }, {
           onConflict: 'user_id'
         });
-      
+
       if (error) {
         console.error("Performance save error:", error);
         throw error;
       }
-      
-      // Vérifier et débloquer les badges automatiquement
+
       await checkAndUnlockBadges(user.id);
-      
+
       Alert.alert("Données mises à jour.");
       router.push("/user");
-    } catch (e: any) { 
+    } catch (e: any) {
       console.error("Save error:", e);
-      Alert.alert("Erreur", e?.message ?? "Impossible de sauvegarder."); 
+      Alert.alert("Erreur", e?.message ?? "Impossible de sauvegarder.");
     }
     finally { setSaving(false); }
   };
@@ -237,34 +232,77 @@ export default function EditPerformances() {
     setHyrox(r => r.map((x, idx) => (i === idx ? { ...x, [key]: val } : x)));
   const removeHyrox = (i: number) => setHyrox(r => r.filter((_, idx) => idx !== i));
 
+  const inputStyle = {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: colors.text,
+  };
+
+  const cardStyle = {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 12,
+  };
+
+  const primaryBtn = {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center' as const,
+  };
+
+  const smallPrimaryBtn = {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+  };
+
+  const addBtn = {
+    backgroundColor: colors.divider,
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 24,
+  };
+
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1 bg-white" keyboardVerticalOffset={Platform.OS === "ios" ? 1 : 20} style={{ flex: 1 }}>
-      <SafeAreaView className="flex-1 bg-white">
-        <ScrollView className="flex-1 bg-white p-6">
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 1 : 20} style={{ flex: 1, backgroundColor: colors.background }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScrollView style={{ flex: 1, backgroundColor: colors.background, padding: 24 }}>
+
+          {/* Bouton retour */}
+          <Pressable onPress={() => router.push('/user')} style={{ padding: 8, borderRadius: 12, backgroundColor: colors.divider, alignSelf: 'flex-start', marginBottom: 16 }}>
+            <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>← Retour</Text>
+          </Pressable>
+
           {/* Entête */}
-          <View className="items-center mb-6">
+          <View style={{ alignItems: 'center', marginBottom: 24 }}>
             <Image
-              source={avatarSource} // ✅ image locale
-              className="w-28 h-28 rounded-full border-4 border-white bg-cyan-300"
+              source={avatarSource}
+              style={{ width: 112, height: 112, borderRadius: 56, borderWidth: 4, borderColor: colors.primary }}
               resizeMode="cover"
             />
-            <Pressable onPress={openAvatarPicker} disabled={savingAvatar} className="mt-3 bg-cyan-600 px-4 py-2 rounded-xl">
-              <Text className="text-white font-semibold">{savingAvatar ? "Mise à jour..." : "Changer la photo"}</Text>
+            <Pressable onPress={openAvatarPicker} disabled={savingAvatar} style={{ marginTop: 12, ...smallPrimaryBtn }}>
+              <Text style={{ color: '#fff', fontWeight: '600' }}>{savingAvatar ? "Mise à jour..." : "Changer la photo"}</Text>
             </Pressable>
           </View>
 
-          <Text className="text-center text-2xl font-bold text-cyan-600 mb-4">Modifier mon profil</Text>
+          <Text style={{ textAlign: 'center', fontSize: 22, fontWeight: '700', color: colors.primary, marginBottom: 16 }}>Modifier mon profil</Text>
 
           {/* Édition du nom */}
-          <View className="mb-8">
-            <Text className="text-lg font-semibold text-gray-800 mb-2">Nom affiché</Text>
-            <View className="flex-row items-center gap-3">
+          <View style={{ marginBottom: 32 }}>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 8 }}>Nom affiché</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <TextInput
                 value={profileName}
                 onChangeText={setProfileName}
                 placeholder="Ton nom"
-                placeholderTextColor="#9ca3af"
-                className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-gray-900"
+                placeholderTextColor={colors.textTertiary}
+                style={{ ...inputStyle, flex: 1 }}
               />
               <Pressable
                 onPress={async () => {
@@ -280,92 +318,97 @@ export default function EditPerformances() {
                     Alert.alert("Sauvegardé", "Ton nom a été mis à jour.");
                   }
                 }}
-                className="bg-cyan-600 px-4 py-3 rounded-xl"
+                style={smallPrimaryBtn}
               >
-                <Text className="text-white font-semibold">OK</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>OK</Text>
               </Pressable>
             </View>
           </View>
 
-          <Text className="text-center text-2xl font-bold text-cyan-600 mb-4">Modifier mes performances</Text>
+          <Text style={{ textAlign: 'center', fontSize: 22, fontWeight: '700', color: colors.primary, marginBottom: 16 }}>Modifier mes performances</Text>
 
-          <View className="mb-8">
-            <Text className="text-lg font-semibold text-gray-800 mb-2">Évolution du poids</Text>
-            <View className="flex-row items-center gap-3">
-              <TextInput value={newWeight} onChangeText={setNewWeight} keyboardType="numbers-and-punctuation" placeholder="Ex: 72.5" placeholderTextColor="#9ca3af" className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-gray-900" />
-              <Text className="text-gray-700 font-semibold">kg</Text>
-              <Pressable onPress={addWeight} className="bg-cyan-600 px-4 py-3 rounded-xl"><Text className="text-white font-semibold">+</Text></Pressable>
+          {/* Poids */}
+          <View style={{ marginBottom: 32 }}>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 8 }}>Évolution du poids</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <TextInput value={newWeight} onChangeText={setNewWeight} keyboardType="numbers-and-punctuation" placeholder="Ex: 72.5" placeholderTextColor={colors.textTertiary} style={{ ...inputStyle, flex: 1 }} />
+              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>kg</Text>
+              <Pressable onPress={addWeight} style={smallPrimaryBtn}><Text style={{ color: '#fff', fontWeight: '600' }}>+</Text></Pressable>
             </View>
             {weights.length > 0 && (
-              <View className="mt-4">
-                <Text className="text-sm text-gray-500 mb-1">Dernières valeurs :</Text>
+              <View style={{ marginTop: 16 }}>
+                <Text style={{ fontSize: 13, color: colors.textTertiary, marginBottom: 4 }}>Dernières valeurs :</Text>
                 {weights.slice(0, 5).map((w, i) => (
-                  <Text key={i} className="text-gray-700">{w.date.toLocaleDateString("fr-FR")} → {w.value} kg</Text>
+                  <Text key={i} style={{ color: colors.textSecondary }}>{w.date.toLocaleDateString("fr-FR")} → {w.value} kg</Text>
                 ))}
               </View>
             )}
           </View>
 
-          <Text className="text-lg font-semibold mb-2">SBD</Text>
-          <TextInput value={squat} onChangeText={setSquat} placeholder="Squat (kg)" placeholderTextColor={"#888"} className="border rounded-xl p-3 mb-3" />
-          <TextInput value={bench} onChangeText={setBench} placeholder="Bench (kg)" placeholderTextColor={"#888"} className="border rounded-xl p-3 mb-3" />
-          <TextInput value={deadlift} onChangeText={setDeadlift} placeholder="Deadlift (kg)" placeholderTextColor={"#888"} className="border rounded-xl p-3 mb-6" />
+          {/* SBD */}
+          <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 8 }}>SBD</Text>
+          <TextInput value={squat} onChangeText={setSquat} placeholder="Squat (kg)" placeholderTextColor={colors.textTertiary} style={{ ...inputStyle, marginBottom: 12 }} />
+          <TextInput value={bench} onChangeText={setBench} placeholder="Bench (kg)" placeholderTextColor={colors.textTertiary} style={{ ...inputStyle, marginBottom: 12 }} />
+          <TextInput value={deadlift} onChangeText={setDeadlift} placeholder="Deadlift (kg)" placeholderTextColor={colors.textTertiary} style={{ ...inputStyle, marginBottom: 24 }} />
 
-          <Text className="text-lg font-semibold mb-2">Running</Text>
+          {/* Running */}
+          <Text style={{ fontSize: 17, fontWeight: '600', color: colors.text, marginBottom: 8 }}>Running</Text>
           {running.map((r, i) => (
-            <View key={i} className="mb-3 border rounded-xl p-3">
-              <TextInput placeholder="Nom (10 km, IronMan...)" placeholderTextColor={"#888"} value={r.label} onChangeText={(t) => updateRunning(i, "label", t)} className="border-b mb-2 p-2" />
-              <TextInput placeholder="Temps / objectif" placeholderTextColor={"#888"} value={r.value} onChangeText={(t) => updateRunning(i, "value", t)} className="p-2" />
-              <Pressable onPress={() => removeRunning(i)} className="mt-2"><Text className="text-red-500">Supprimer</Text></Pressable>
+            <View key={i} style={{ ...cardStyle, marginBottom: 12 }}>
+              <TextInput placeholder="Nom (10 km, IronMan...)" placeholderTextColor={colors.textTertiary} value={r.label} onChangeText={(t) => updateRunning(i, "label", t)} style={{ borderWidth: 1, borderColor: colors.border, borderBottomWidth: 1, marginBottom: 8, padding: 8, color: colors.text }} />
+              <TextInput placeholder="Temps / objectif" placeholderTextColor={colors.textTertiary} value={r.value} onChangeText={(t) => updateRunning(i, "value", t)} style={{ padding: 8, color: colors.text }} />
+              <Pressable onPress={() => removeRunning(i)} style={{ marginTop: 8 }}><Text style={{ color: colors.error }}>Supprimer</Text></Pressable>
             </View>
           ))}
-          <Pressable onPress={addRunning} className="bg-cyan-50 p-3 rounded-xl mb-6">
-            <Text className="text-cyan-600 font-semibold text-center">+ Ajouter une course</Text>
+          <Pressable onPress={addRunning} style={addBtn}>
+            <Text style={{ color: colors.primary, fontWeight: '600', textAlign: 'center' }}>+ Ajouter une course</Text>
           </Pressable>
 
-          <Text className="text-lg text-cyan-600 font-semibold mb-2">Hyrox</Text>
+          {/* Hyrox */}
+          <Text style={{ fontSize: 17, fontWeight: '600', color: colors.primary, marginBottom: 8 }}>Hyrox</Text>
           {hyrox.map((h, i) => (
-            <View key={i} className="mb-3 border rounded-xl p-3">
-              <TextInput placeholder="Lieu (Paris, Berlin...)" placeholderTextColor={"#888"} value={h.label} onChangeText={(t) => updateHyrox(i, "label", t)} className="border-b mb-2 p-2" />
-              <TextInput placeholder="Temps (ex: 1h05)" placeholderTextColor={"#888"} value={h.value} onChangeText={(t) => updateHyrox(i, "value", t)} className="border-b mb-2 p-2" />
-              <View className="flex-row gap-4 mt-2">
-                <Pressable onPress={() => updateHyrox(i, "type", "solo")} className={`px-3 py-2 rounded-xl ${h.type === "solo" ? "bg-cyan-600" : "bg-gray-200"}`}><Text className={h.type === "solo" ? "text-white" : "text-gray-700"}>Solo</Text></Pressable>
-                <Pressable onPress={() => updateHyrox(i, "type", "double")} className={`px-3 py-2 rounded-xl ${h.type === "double" ? "bg-cyan-600" : "bg-gray-200"}`}><Text className={h.type === "double" ? "text-white" : "text-gray-700"}>Double</Text></Pressable>
+            <View key={i} style={{ ...cardStyle, marginBottom: 12 }}>
+              <TextInput placeholder="Lieu (Paris, Berlin...)" placeholderTextColor={colors.textTertiary} value={h.label} onChangeText={(t) => updateHyrox(i, "label", t)} style={{ borderWidth: 1, borderColor: colors.border, borderBottomWidth: 1, marginBottom: 8, padding: 8, color: colors.text }} />
+              <TextInput placeholder="Temps (ex: 1h05)" placeholderTextColor={colors.textTertiary} value={h.value} onChangeText={(t) => updateHyrox(i, "value", t)} style={{ borderWidth: 1, borderColor: colors.border, borderBottomWidth: 1, marginBottom: 8, padding: 8, color: colors.text }} />
+              <View style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
+                <Pressable onPress={() => updateHyrox(i, "type", "solo")} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: h.type === "solo" ? colors.primary : colors.divider }}><Text style={{ color: h.type === "solo" ? '#fff' : colors.textSecondary }}>Solo</Text></Pressable>
+                <Pressable onPress={() => updateHyrox(i, "type", "double")} style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: h.type === "double" ? colors.primary : colors.divider }}><Text style={{ color: h.type === "double" ? '#fff' : colors.textSecondary }}>Double</Text></Pressable>
               </View>
-              <Pressable onPress={() => removeHyrox(i)} className="mt-2"><Text className="text-red-500">Supprimer</Text></Pressable>
+              <Pressable onPress={() => removeHyrox(i)} style={{ marginTop: 8 }}><Text style={{ color: colors.error }}>Supprimer</Text></Pressable>
             </View>
           ))}
-          <Pressable onPress={addHyrox} className="bg-cyan-50 p-3 rounded-xl mb-6">
-            <Text className="text-cyan-600 font-semibold text-center">+ Ajouter une performance Hyrox</Text>
+          <Pressable onPress={addHyrox} style={addBtn}>
+            <Text style={{ color: colors.primary, fontWeight: '600', textAlign: 'center' }}>+ Ajouter une performance Hyrox</Text>
           </Pressable>
 
-          <Pressable onPress={save} disabled={saving} className="bg-cyan-600 rounded-xl py-4 mt-6">
-            <Text className="text-center text-white font-semibold">{saving ? "Enregistrement..." : "Enregistrer"}</Text>
+          <Pressable onPress={save} disabled={saving} style={{ ...primaryBtn, marginTop: 24 }}>
+            <Text style={{ color: '#fff', fontWeight: '600' }}>{saving ? "Enregistrement..." : "Enregistrer"}</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
 
+      {/* Avatar picker modal */}
       {avatarSheetVisible && (
-        <View className="absolute inset-0">
-          <Pressable className="flex-1 bg-black/40" onPress={() => setAvatarSheetVisible(false)} />
-          <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-6">
-            <Text className="text-lg font-semibold text-cyan-700 mb-4 text-center">Choisir un avatar</Text>
-            <View className="flex-row flex-wrap justify-between">
+        <View style={{ position: 'absolute', inset: 0 }}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }} onPress={() => setAvatarSheetVisible(false)} />
+          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: colors.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 }}>
+            <Text style={{ fontSize: 17, fontWeight: '600', color: colors.primary, marginBottom: 16, textAlign: 'center' }}>Choisir un avatar</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {AVATAR_POOL.map((a) => {
                 const selected = a.id === selectedAvatarId;
                 return (
                   <Pressable
                     key={a.id}
                     onPress={() => handleSelectAvatar(a.id)}
-                    className={`w-[30%] aspect-square mb-4 rounded-full overflow-hidden ${selected ? "ring-4 ring-cyan-900 bg-cyan-300" : ""}`}
+                    style={{ width: '30%', aspectRatio: 1, marginBottom: 16, borderRadius: 999, overflow: 'hidden', borderWidth: selected ? 4 : 0, borderColor: colors.primary }}
                   >
-                    <Image source={a.src} className="w-full h-full" />
+                    <Image source={a.src} style={{ width: '100%', height: '100%' }} />
                   </Pressable>
                 );
               })}
             </View>
-            <Pressable onPress={() => setAvatarSheetVisible(false)} className="mt-2 bg-gray-200 py-3 rounded-xl">
-              <Text className="text-center text-gray-700">Fermer</Text>
+            <Pressable onPress={() => setAvatarSheetVisible(false)} style={{ marginTop: 8, backgroundColor: colors.divider, paddingVertical: 12, borderRadius: 12 }}>
+              <Text style={{ textAlign: 'center', color: colors.textSecondary }}>Fermer</Text>
             </Pressable>
           </View>
         </View>

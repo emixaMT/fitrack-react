@@ -14,9 +14,11 @@ import { supabase } from '../../../config/supabaseConfig';
 import { checkAndUnlockBadges } from '../../../services/badgeService';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React from 'react';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function CreateNote() {
   const router = useRouter();
+  const { colors } = useTheme();
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -51,20 +53,24 @@ export default function CreateNote() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-      className="flex-1 bg-white"
-      style={{ flex: 1 }}
+      className="flex-1"
+      style={{ flex: 1, backgroundColor: colors.background }}
     >
       <SafeAreaView>
         {/* Header simple avec retour */}
         <Pressable
           onPress={() => router.push('/note')}
-          className="p-2 rounded-full bg-gray-100 absolute top-16 left-4"
+          className="p-2 rounded-full absolute top-16 left-4"
+          style={{ backgroundColor: colors.divider }}
         >
-          <Ionicons name="arrow-back" size={20} color="#111827" />
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </Pressable>
 
         <View className="flex-col w-full justify-center px-4 pt-12 pb-3">
-          <Text className="text-center px-4 text-2xl font-semibold text-cyan-900 mb-6">
+          <Text
+            className="text-center px-4 text-2xl font-semibold mb-6"
+            style={{ color: colors.text }}
+          >
             Nouvelle note
           </Text>
 
@@ -72,21 +78,31 @@ export default function CreateNote() {
             value={content}
             onChangeText={setContent}
             placeholder="Écris ta note ici…"
-            className="border border-gray-200 rounded-2xl p-4 bg-gray-50 text-gray-900"
-            placeholderTextColor="#0891B2" // ✅ Indigo visible
+            className="border rounded-2xl p-4"
+            placeholderTextColor={colors.textTertiary}
             multiline
             textAlignVertical="top"
-            style={{ minHeight: 220 }}
+            style={{
+              minHeight: 220,
+              borderColor: colors.border,
+              backgroundColor: colors.divider,
+              color: colors.text,
+            }}
           />
 
           <Pressable
             onPress={saveNote}
             disabled={!content.trim() || saving}
-            className={`mt-6 rounded-full py-6 items-center justify-center ${
-              content.trim() && !saving ? 'bg-cyan-600' : 'bg-cyan-300'
-            }`}
+            className="mt-6 rounded-full py-6 items-center justify-center"
+            style={{
+              backgroundColor:
+                content.trim() && !saving ? colors.primary : colors.divider,
+            }}
           >
-            <Text className="text-center text-white font-semibold">
+            <Text
+              className="text-center font-semibold"
+              style={{ color: '#fff' }}
+            >
               {saving ? 'Enregistrement…' : 'Enregistrer'}
             </Text>
           </Pressable>

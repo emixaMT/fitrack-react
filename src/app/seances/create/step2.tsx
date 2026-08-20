@@ -14,12 +14,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../../config/supabaseConfig';
 import { sportsMeta, SportKey } from '../../../../constantes/sport';
 import { checkAndUnlockBadges } from '../../../../services/badgeService';
+import { useTheme } from '../../../../contexts/ThemeContext';
 import React from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
 
 export default function Step2() {
+  const { colors } = useTheme();
   const { sport } = useLocalSearchParams<{ sport: SportKey }>();
   const router = useRouter();
 
@@ -120,107 +122,125 @@ export default function Step2() {
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-      className="flex-1 bg-white"
-      style={{ flex: 1 }}
+      className="flex-1"
+      style={{ flex: 1, backgroundColor: colors.background }}
     >
       <View className="pt-12 flex-1">
-        <Pressable onPress={() => router.push('/workout')} className="p-2 rounded-full bg-gray-100 absolute top-16 left-4 z-10">
-          <Ionicons name="arrow-back" size={20} color="#111827" />
+        <Pressable
+          onPress={() => router.push('/workout')}
+          className="p-2 rounded-full absolute top-16 left-4 z-10"
+          style={{ backgroundColor: colors.divider }}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </Pressable>
 
         <ScrollView
-          className="flex-1 bg-white px-6 py-8"
+          className="flex-1 px-6 py-8"
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ flexGrow: 1 }}
+          contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.background }}
         >
           {/* header image/tag */}
           {meta && (
             <View className="items-center mb-6">
               <View style={{
                 width: 80, height: 80, borderRadius: 24,
-                backgroundColor: '#0891B2',
+                backgroundColor: colors.primary,
                 alignItems: 'center', justifyContent: 'center', marginBottom: 8,
               }}>
                 <Ionicons name={meta.icon as any} size={40} color="#fff" />
               </View>
-              <Text className="text-cyan-600 font-semibold text-3xl">{meta.label}</Text>
+              <Text className="font-semibold text-3xl" style={{ color: colors.primary }}>{meta.label}</Text>
             </View>
           )}
 
         {/* nom */}
-        <Text className="text-gray-700 mb-2">Nom de la séance</Text>
+        <Text className="mb-2" style={{ color: colors.text }}>Nom de la séance</Text>
         <TextInput
           value={nomSeance}
           onChangeText={setNomSeance}
           placeholder="Ex: Upper Body #1 / Sortie tempo"
-          className="border border-gray-300 rounded-xl px-4 py-3 mb-6 bg-gray-50"
-          placeholderTextColor="#9ca3af"
+          className="border rounded-xl px-4 py-3 mb-6"
+          style={{ borderColor: colors.border, backgroundColor: colors.divider }}
+          placeholderTextColor={colors.textTertiary}
         />
 
         {isForce && (
           <View>
             <View className="flex-row items-center justify-between mb-2">
-              <Text className="text-lg font-semibold text-gray-800">Exercices</Text>
-              <Pressable onPress={addExo} className="px-3 py-2 bg-cyan-50 rounded-lg">
-                <Text className="text-cyan-600 font-semibold">+ Ajouter</Text>
+              <Text className="text-lg font-semibold" style={{ color: colors.text }}>Exercices</Text>
+              <Pressable
+                onPress={addExo}
+                className="px-3 py-2 rounded-lg"
+                style={{ backgroundColor: colors.divider }}
+              >
+                <Text className="font-semibold" style={{ color: colors.primary }}>+ Ajouter</Text>
               </Pressable>
             </View>
 
             {exercices.map((exo, idx) => (
-              <View key={idx} className="rounded-2xl border border-gray-200 p-4 mb-4">
+              <View
+                key={idx}
+                className="rounded-2xl border p-4 mb-4"
+                style={{ borderColor: colors.border }}
+              >
                 <View className="flex-row justify-between items-center mb-3">
-                  <Text className="text-gray-700 font-medium">Exercice {idx + 1}</Text>
+                  <Text className="font-medium" style={{ color: colors.text }}>Exercice {idx + 1}</Text>
                   {exercices.length > 1 && (
                     <Pressable
                       onPress={() => removeExo(idx)}
-                      className="px-3 py-1 rounded-lg bg-red-50"
+                      className="px-3 py-1 rounded-lg"
+                      style={{ backgroundColor: colors.error + '1A' }}
                     >
-                      <Text className="text-red-600 font-semibold">Supprimer</Text>
+                      <Text className="font-semibold" style={{ color: colors.error }}>Supprimer</Text>
                     </Pressable>
                   )}
                 </View>
 
-                <Text className="text-gray-600 mt-3 mb-1">Nom</Text>
+                <Text className="mt-3 mb-1" style={{ color: colors.textSecondary }}>Nom</Text>
                 <TextInput
                   value={exo.nom}
                   onChangeText={(t) => updateExo(idx, 'nom', t)}
                   placeholder="Nom (ex: Squat)"
-                  className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-gray-50 mb-3"
-                  placeholderTextColor="#9ca3af"
+                  className="border rounded-xl px-4 py-3 mb-3"
+                  style={{ borderColor: colors.border, backgroundColor: colors.divider, color: colors.text }}
+                  placeholderTextColor={colors.textTertiary}
                 />
 
                 <View className="flex-row justify-between">
                   <View className="w-[32%]">
-                    <Text className="text-gray-600 mb-1">Séries</Text>
+                    <Text className="mb-1" style={{ color: colors.textSecondary }}>Séries</Text>
                     <TextInput
                       keyboardType="numeric"
                       value={exo.series?.toString() ?? ''}
                       onChangeText={(t) => updateExo(idx, 'series', t)}
                       placeholder="ex: 4"
-                      className="border border-gray-300 rounded-xl px-3 py-3 bg-gray-50 text-gray-900"
-                      placeholderTextColor="#9ca3af"
+                      className="border rounded-xl px-3 py-3"
+                      style={{ borderColor: colors.border, backgroundColor: colors.divider, color: colors.text }}
+                      placeholderTextColor={colors.textTertiary}
                     />
                   </View>
                   <View className="w-[32%]">
-                    <Text className="text-gray-600 mb-1">Reps</Text>
+                    <Text className="mb-1" style={{ color: colors.textSecondary }}>Reps</Text>
                     <TextInput
                       keyboardType="numeric"
                       value={exo.reps?.toString() ?? ''}
                       onChangeText={(t) => updateExo(idx, 'reps', t)}
                       placeholder="ex: 8"
-                      className="border border-gray-300 rounded-xl px-3 py-3 bg-gray-50 text-gray-900"
-                      placeholderTextColor="#9ca3af"
+                      className="border rounded-xl px-3 py-3"
+                      style={{ borderColor: colors.border, backgroundColor: colors.divider, color: colors.text }}
+                      placeholderTextColor={colors.textTertiary}
                     />
                   </View>
                   <View className="w-[32%]">
-                    <Text className="text-gray-600 mb-1">RPE</Text>
+                    <Text className="mb-1" style={{ color: colors.textSecondary }}>RPE</Text>
                     <TextInput
                       keyboardType="numeric"
                       value={exo.charge?.toString() ?? ''}
                       onChangeText={(t) => updateExo(idx, 'charge', t)}
                       placeholder="ex: 7"
-                      className="border border-gray-300 rounded-xl px-3 py-3 bg-gray-50 text-gray-900"
-                      placeholderTextColor="#9ca3af"
+                      className="border rounded-xl px-3 py-3"
+                      style={{ borderColor: colors.border, backgroundColor: colors.divider, color: colors.text }}
+                      placeholderTextColor={colors.textTertiary}
                     />
                   </View>
                 </View>
@@ -231,44 +251,48 @@ export default function Step2() {
 
         {isEndurance && (
           <View>
-            <Text className="text-lg font-semibold text-gray-800 mb-2">Objectifs</Text>
+            <Text className="text-lg font-semibold mb-2" style={{ color: colors.text }}>Objectifs</Text>
 
-            <Text className="text-gray-600 mb-1">Distance (km)</Text>
+            <Text className="mb-1" style={{ color: colors.textSecondary }}>Distance (km)</Text>
             <TextInput
               value={km}
               onChangeText={setKm}
               keyboardType="numeric"
               placeholder="ex: 10"
-              className="border border-gray-300 rounded-xl px-4 py-3 bg-gray-50 mb-3"
-              placeholderTextColor="#0891B2"
+              className="border rounded-xl px-4 py-3 mb-3"
+              style={{ borderColor: colors.border, backgroundColor: colors.divider }}
+              placeholderTextColor={colors.textTertiary}
             />
 
-            <Text className="text-gray-600 mb-1">Vitesse / Allure</Text>
+            <Text className="mb-1" style={{ color: colors.textSecondary }}>Vitesse / Allure</Text>
             <TextInput
               value={vitesse}
               onChangeText={setVitesse}
               placeholder="ex: 12 km/h ou 5:00 /km"
-              className="border border-gray-300 rounded-xl px-4 py-3 bg-gray-50 mb-3"
-              placeholderTextColor="#0891B2"
+              className="border rounded-xl px-4 py-3 mb-3"
+              style={{ borderColor: colors.border, backgroundColor: colors.divider }}
+              placeholderTextColor={colors.textTertiary}
             />
 
-            <Text className="text-gray-600 mb-1">Dénivelé (m)</Text>
+            <Text className="mb-1" style={{ color: colors.textSecondary }}>Dénivelé (m)</Text>
             <TextInput
               value={denivele}
               onChangeText={setDenivele}
               keyboardType="numeric"
               placeholder="ex: 150"
-              className="border border-gray-300 rounded-xl px-4 py-3 bg-gray-50 mb-3"
-              placeholderTextColor="#0891B2"
+              className="border rounded-xl px-4 py-3 mb-3"
+              style={{ borderColor: colors.border, backgroundColor: colors.divider }}
+              placeholderTextColor={colors.textTertiary}
             />
 
-            <Text className="text-gray-600 mb-1">Durée (optionnel)</Text>
+            <Text className="mb-1" style={{ color: colors.textSecondary }}>Durée (optionnel)</Text>
             <TextInput
               value={duree}
               onChangeText={setDuree}
               placeholder="ex: 45 min"
-              className="border border-gray-300 rounded-xl px-4 py-3 bg-gray-50"
-              placeholderTextColor="#0891B2"
+              className="border rounded-xl px-4 py-3"
+              style={{ borderColor: colors.border, backgroundColor: colors.divider }}
+              placeholderTextColor={colors.textTertiary}
             />
           </View>
         )}
@@ -278,9 +302,10 @@ export default function Step2() {
           <Pressable
             onPress={onSave}
             disabled={!isValid}
-            className={`rounded-2xl mb-12 py-4 ${isValid ? 'bg-cyan-600' : 'bg-cyan-300'}`}
+            className="rounded-2xl mb-12 py-4"
+            style={{ backgroundColor: isValid ? colors.primary : colors.divider }}
           >
-            <Text className="text-center text-white font-semibold">Enregistrer la séance</Text>
+            <Text className="text-center font-semibold" style={{ color: '#fff' }}>Enregistrer la séance</Text>
           </Pressable>
         </ScrollView>
       </View>

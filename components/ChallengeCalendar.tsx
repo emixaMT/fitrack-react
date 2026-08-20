@@ -199,22 +199,22 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
                       backgroundColor: isCompleted
                         ? colors.primary
                         : isToday
-                        ? '#fbbf24'
+                        ? colors.warning
                         : isPast
-                        ? '#c4b4ff'
-                        : '#f3f4f6',
+                        ? colors.divider
+                        : colors.divider,
                       borderRadius: 8,
                       justifyContent: 'center',
                       alignItems: 'center',
                       borderWidth: isToday ? 2 : 0,
-                      borderColor: '#f59e0b',
+                      borderColor: colors.warning,
                     }}
                   >
                     <Text
                       style={{
                         fontSize: 14,
                         fontWeight: isToday ? '700' : '500',
-                        color: isCompleted ? '#ffffff' : isToday ? '#ffffff' : '#1f2937',
+                        color: isCompleted ? '#ffffff' : isToday ? '#ffffff' : colors.text,
                       }}
                     >
                       {day}
@@ -233,11 +233,11 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>Complété</Text>
           </View>
           <View className="flex-row items-center gap-1">
-            <View style={{ width: 16, height: 16, backgroundColor: '#fbbf24', borderRadius: 4, borderWidth: 2, borderColor: '#f59e0b' }} />
+            <View style={{ width: 16, height: 16, backgroundColor: colors.warning, borderRadius: 4, borderWidth: 2, borderColor: colors.warning }} />
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>Aujourd'hui</Text>
           </View>
           <View className="flex-row items-center gap-1">
-            <View style={{ width: 16, height: 16, backgroundColor: '#c4b4ff', borderRadius: 4 }} />
+            <View style={{ width: 16, height: 16, backgroundColor: colors.divider, borderRadius: 4 }} />
             <Text style={{ fontSize: 12, color: colors.textSecondary }}>Manqué</Text>
           </View>
         </View>

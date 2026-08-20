@@ -3,12 +3,14 @@ import { View, Text } from 'react-native';
 import { supabase } from '../config/supabaseConfig';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ProgressBar from './progressBar';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ChallengeProgressProps {
   userId: string | null;
 }
 
 export const ChallengeProgress: React.FC<ChallengeProgressProps> = ({ userId }) => {
+  const { colors } = useTheme();
   const [completedCount, setCompletedCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +37,6 @@ export const ChallengeProgress: React.FC<ChallengeProgressProps> = ({ userId }) 
 
     fetchCompletedChallenges();
 
-    // S'abonner aux changements en temps réel
     const channel = supabase
       .channel(`challenges-${userId}`)
       .on(
@@ -62,87 +63,84 @@ export const ChallengeProgress: React.FC<ChallengeProgressProps> = ({ userId }) 
 
   if (loading) {
     return (
-      <View className="bg-white rounded-2xl shadow-md p-5">
-        <Text className="text-gray-500">Chargement...</Text>
+      <View style={{ backgroundColor: colors.card, borderRadius: 16, padding: 20 }}>
+        <Text style={{ color: colors.textTertiary }}>Chargement...</Text>
       </View>
     );
   }
 
+  const milestoneStyle = (done: boolean) => ({
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+  });
+
+  const milestoneRow = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  };
+
   return (
-    <View className="bg-white rounded-2xl shadow-md p-5 my-6">
-      <View className="flex-row justify-between items-center mb-4">
-        <View className="flex-row items-center gap-2">
+    <View style={{ backgroundColor: colors.card, borderRadius: 16, padding: 20, marginVertical: 24 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Ionicons name="trophy" size={24} color="#FFD700" />
-          <Text className="text-xl font-bold text-gray-800">Défis relevés</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', color: colors.text }}>Défis relevés</Text>
         </View>
-        <View className="bg-cyan-100 px-3 py-1 rounded-full">
-          <Text className="text-cyan-700 font-semibold text-xs">{completedCount} / 365</Text>
+        <View style={{ backgroundColor: colors.divider, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999 }}>
+          <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 12 }}>{completedCount} / 365</Text>
         </View>
       </View>
 
       <ProgressBar progress={progress} completed={completedCount >= 365} />
 
-      <View className="mt-4">
-        <Text className="text-2xl font-bold text-cyan-600 text-center">{percentage}%</Text>
-        <Text className="text-sm text-gray-600 text-center mt-1">de l'année complétée</Text>
+      <View style={{ marginTop: 16 }}>
+        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.primary, textAlign: 'center' }}>{percentage}%</Text>
+        <Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>de l'année complétée</Text>
       </View>
 
       {/* Milestones */}
-      <View className="mt-6 space-y-2">
-        <View className="flex-row items-center justify-between py-2 border-b border-gray-100">
-          <View className="flex-row items-center gap-2">
-            <Ionicons 
-              name={completedCount >= 7 ? "checkmark-circle" : "ellipse-outline"} 
-              size={20} 
-              color={completedCount >= 7 ? "#22c55e" : "#9ca3af"} 
-            />
-            <Text className={`${completedCount >= 7 ? 'text-green-600 font-semibold' : 'text-gray-500'}`}>
-              7 jours d'affilée
-            </Text>
-          </View>
-          <Text className="text-xs text-gray-400">{completedCount >= 7 ? '✓' : `${Math.max(0, 7 - completedCount)} restants`}</Text>
-        </View>
+      <View style={{ marginTop: 24, gap: 0 }}>
+        {[
+          { count: 7, label: "7 jours d'affilée" },
+          { count: 30, label: "30 jours d'affilée" },
+          { count: 100, label: "100 défis" },
+        ].map((m, idx) => {
+          const done = completedCount >= m.count;
+          return (
+            <View key={idx} style={milestoneRow}>
+              <View style={milestoneStyle(done)}>
+                <Ionicons
+                  name={done ? "checkmark-circle" : "ellipse-outline"}
+                  size={20}
+                  color={done ? colors.success : colors.textTertiary}
+                />
+                <Text style={{ color: done ? colors.success : colors.textTertiary, fontWeight: done ? '600' : '400' }}>
+                  {m.label}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 12, color: colors.textTertiary }}>{done ? '✓' : `${Math.max(0, m.count - completedCount)} restants`}</Text>
+            </View>
+          );
+        })}
 
-        <View className="flex-row items-center justify-between py-2 border-b border-gray-100">
-          <View className="flex-row items-center gap-2">
-            <Ionicons 
-              name={completedCount >= 30 ? "checkmark-circle" : "ellipse-outline"} 
-              size={20} 
-              color={completedCount >= 30 ? "#22c55e" : "#9ca3af"} 
+        {/* 365 - special gold */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Ionicons
+              name={completedCount >= 365 ? "checkmark-circle" : "ellipse-outline"}
+              size={20}
+              color={completedCount >= 365 ? "#FFD700" : colors.textTertiary}
             />
-            <Text className={`${completedCount >= 30 ? 'text-green-600 font-semibold' : 'text-gray-500'}`}>
-              30 jours d'affilée
-            </Text>
-          </View>
-          <Text className="text-xs text-gray-400">{completedCount >= 30 ? '✓' : `${Math.max(0, 30 - completedCount)} restants`}</Text>
-        </View>
-
-        <View className="flex-row items-center justify-between py-2 border-b border-gray-100">
-          <View className="flex-row items-center gap-2">
-            <Ionicons 
-              name={completedCount >= 100 ? "checkmark-circle" : "ellipse-outline"} 
-              size={20} 
-              color={completedCount >= 100 ? "#22c55e" : "#9ca3af"} 
-            />
-            <Text className={`${completedCount >= 100 ? 'text-green-600 font-semibold' : 'text-gray-500'}`}>
-              100 défis
-            </Text>
-          </View>
-          <Text className="text-xs text-gray-400">{completedCount >= 100 ? '✓' : `${Math.max(0, 100 - completedCount)} restants`}</Text>
-        </View>
-
-        <View className="flex-row items-center justify-between py-2">
-          <View className="flex-row items-center gap-2">
-            <Ionicons 
-              name={completedCount >= 365 ? "checkmark-circle" : "ellipse-outline"} 
-              size={20} 
-              color={completedCount >= 365 ? "#FFD700" : "#9ca3af"} 
-            />
-            <Text className={`${completedCount >= 365 ? 'text-yellow-600 font-bold' : 'text-gray-500'}`}>
+            <Text style={{ color: completedCount >= 365 ? '#FFD700' : colors.textTertiary, fontWeight: completedCount >= 365 ? '700' : '400' }}>
               365 défis - Année complète ! 🏆
             </Text>
           </View>
-          <Text className="text-xs text-gray-400">{completedCount >= 365 ? '✓' : `${Math.max(0, 365 - completedCount)} restants`}</Text>
+          <Text style={{ fontSize: 12, color: colors.textTertiary }}>{completedCount >= 365 ? '✓' : `${Math.max(0, 365 - completedCount)} restants`}</Text>
         </View>
       </View>
     </View>

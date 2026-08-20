@@ -14,11 +14,12 @@ interface WorkoutStats {
   velo: number;
 }
 
+// Couleurs des sports — dérivées du thème pour cohérence
 const SPORT_COLORS = {
-  musculation: '#ef476f',  // Indigo
-  crossfit: '#ffd166',     // Amber
-  running: '#06d6a0',      // Emerald
-  velo: '#118ab2',         // Cyan
+  musculation: '#6366F1',  // Indigo
+  crossfit: '#F59E0B',     // Amber
+  running: '#10B981',      // Emerald
+  velo: '#06B6D4',         // Cyan
 };
 
 export default function WorkoutDistributionChart({ userId }: { userId: string | null }) {

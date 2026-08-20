@@ -14,12 +14,14 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "../../../../config/supabaseConfig";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useTheme } from "../../../../contexts/ThemeContext";
 
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
 type Seance = { nom: string; id_user: string; exercices: Exercice[] };
 export default function EditSeanceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { colors } = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -146,9 +148,14 @@ export default function EditSeanceScreen() {
   // ---------- UI ----------
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
-        <ActivityIndicator size="large" color="#0891B2" />
-        <Text className="text-gray-500 mt-3">Chargement…</Text>
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text className="mt-3" style={{ color: colors.textTertiary }}>
+          Chargement…
+        </Text>
       </View>
     );
   }
@@ -157,18 +164,25 @@ export default function EditSeanceScreen() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-      className="flex-1 h-full bg-white"
-      style={{ flex: 1 }}
+      className="flex-1 h-full"
+      style={{ flex: 1, backgroundColor: colors.background }}
     >
-      <SafeAreaView className="mx-auto flex h-full items-center bg-white flex-col flex-wrap gap-3">
+      <SafeAreaView
+        className="mx-auto flex h-full items-center flex-col flex-wrap gap-3"
+        style={{ backgroundColor: colors.background }}
+      >
         <View className="w-full flex flex-row items-center mb-4 px-2 mt-6">
           <Pressable
             onPress={() => router.push("/workout")}
-            className="absolute left-0 -translate-x-full p-2 rounded-full bg-cyan-50"
+            className="absolute left-0 -translate-x-full p-2 rounded-full"
+            style={{ backgroundColor: colors.primaryLight }}
           >
-            <Ionicons name="arrow-back" size={24} color="#0891B2" />
+            <Ionicons name="arrow-back" size={24} color={colors.primary} />
           </Pressable>
-          <Text className="text-xl font-semibold text-gray-800 text-center">
+          <Text
+            className="text-xl font-semibold text-center"
+            style={{ color: colors.text }}
+          >
             Modifier la séance
           </Text>
         </View>
@@ -176,25 +190,41 @@ export default function EditSeanceScreen() {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
           {/* Nom séance */}
           <View className="my-2 w-full">
-            <Text className="text-gray-600 my-2">Nom de la séance</Text>
+            <Text className="my-2" style={{ color: colors.textSecondary }}>
+              Nom de la séance
+            </Text>
             <TextInput
               value={nom}
               onChangeText={setNom}
               placeholder="Ex: Upper #1"
-              className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-gray-50"
-              placeholderTextColor="#0891B2"
+              className="border rounded-xl px-4 py-3"
+              style={{
+                borderColor: colors.border,
+                color: colors.text,
+                backgroundColor: colors.divider,
+              }}
+              placeholderTextColor={colors.textTertiary}
             />
           </View>
 
           {exercices.map((exo, idx) => (
-            <View key={idx} className="rounded-2xl border border-gray-200 p-4 mb-4">
+            <View
+              key={idx}
+              className="rounded-2xl border p-4 mb-4"
+              style={{ borderColor: colors.border }}
+            >
               <View className="flex-row justify-between items-center mb-3">
-                <Text className="text-gray-700 font-medium">Exercice {idx + 1}</Text>
+                <Text className="font-medium" style={{ color: colors.text }}>
+                  Exercice {idx + 1}
+                </Text>
                 <Pressable
                   onPress={() => removeExo(idx)}
-                  className="px-3 py-1 rounded-lg bg-red-50"
+                  className="px-3 py-1 rounded-lg"
+                  style={{ backgroundColor: colors.error }}
                 >
-                  <Text className="text-red-600 font-semibold">Supprimer</Text>
+                  <Text className="font-semibold" style={{ color: '#fff' }}>
+                    Supprimer
+                  </Text>
                 </Pressable>
               </View>
 
@@ -202,42 +232,68 @@ export default function EditSeanceScreen() {
                 value={exo.nom}
                 onChangeText={(t) => updateExo(idx, "nom", t)}
                 placeholder="Nom (ex: Développé couché)"
-                className="border border-gray-300 rounded-xl px-4 py-3 text-gray-900 bg-gray-50 mb-3"
-                placeholderTextColor="#0891B2"
+                className="border rounded-xl px-4 py-3 mb-3"
+                style={{
+                  borderColor: colors.border,
+                  color: colors.text,
+                  backgroundColor: colors.divider,
+                }}
+                placeholderTextColor={colors.textTertiary}
               />
 
               <View className="flex-row justify-between">
                 <View className="w-[32%]">
-                  <Text className="text-gray-600 mb-1">Séries</Text>
+                  <Text className="mb-1" style={{ color: colors.textSecondary }}>
+                    Séries
+                  </Text>
                   <TextInput
                     keyboardType="numeric"
                     value={exo.series?.toString() ?? ""}
                     onChangeText={(t) => updateExo(idx, "series", t)}
                     placeholder="ex: 4"
-                    className="border border-gray-300 rounded-xl px-3 py-3 bg-gray-50 text-gray-900"
-                    placeholderTextColor="#0891B2"
+                    className="border rounded-xl px-3 py-3"
+                    style={{
+                      borderColor: colors.border,
+                      color: colors.text,
+                      backgroundColor: colors.divider,
+                    }}
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
                 <View className="w-[32%]">
-                  <Text className="text-gray-600 mb-1">Reps</Text>
+                  <Text className="mb-1" style={{ color: colors.textSecondary }}>
+                    Reps
+                  </Text>
                   <TextInput
                     keyboardType="numeric"
                     value={exo.reps?.toString() ?? ""}
                     onChangeText={(t) => updateExo(idx, "reps", t)}
                     placeholder="ex: 8"
-                    className="border border-gray-300 rounded-xl px-3 py-3 bg-gray-50 text-gray-900"
-                    placeholderTextColor="#0891B2"
+                    className="border rounded-xl px-3 py-3"
+                    style={{
+                      borderColor: colors.border,
+                      color: colors.text,
+                      backgroundColor: colors.divider,
+                    }}
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
                 <View className="w-[32%]">
-                  <Text className="text-gray-600 mb-1">RPE</Text>
+                  <Text className="mb-1" style={{ color: colors.textSecondary }}>
+                    RPE
+                  </Text>
                   <TextInput
                     keyboardType="numeric"
                     value={exo.charge?.toString() ?? ""}
                     onChangeText={(t) => updateExo(idx, "charge", t)}
                     placeholder="ex: 7"
-                    className="border border-gray-300 rounded-xl px-3 py-3 bg-gray-50 text-gray-900"
-                    placeholderTextColor="#0891B2"
+                    className="border rounded-xl px-3 py-3"
+                    style={{
+                      borderColor: colors.border,
+                      color: colors.text,
+                      backgroundColor: colors.divider,
+                    }}
+                    placeholderTextColor={colors.textTertiary}
                   />
                 </View>
               </View>
@@ -246,9 +302,13 @@ export default function EditSeanceScreen() {
 
           <Pressable
             onPress={addExo}
-            className="w-full mt-1 mb-6 self-start px-4 py-2 rounded-xl bg-cyan-50"
+            className="w-full mt-1 mb-6 self-start px-4 py-2 rounded-xl"
+            style={{ backgroundColor: colors.primaryLight }}
           >
-            <Text className="text-center text-cyan-600 font-semibold">
+            <Text
+              className="text-center font-semibold"
+              style={{ color: colors.primary }}
+            >
               + Ajouter un exercice
             </Text>
           </Pressable>
@@ -256,9 +316,10 @@ export default function EditSeanceScreen() {
           <Pressable
             onPress={onSave}
             disabled={saving}
-            className="w-full mt-2 mb-10 items-center justify-center rounded-2xl bg-cyan-600 p-4"
+            className="w-full mt-2 mb-10 items-center justify-center rounded-2xl p-4"
+            style={{ backgroundColor: colors.primary }}
           >
-            <Text className="text-white text-base font-semibold">
+            <Text className="text-base font-semibold" style={{ color: '#fff' }}>
               {saving ? "Enregistrement..." : "Enregistrer"}
             </Text>
           </Pressable>
