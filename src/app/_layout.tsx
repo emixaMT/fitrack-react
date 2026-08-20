@@ -5,6 +5,7 @@ import * as Device from "expo-device";
 import { Platform } from "react-native";
 import { useEffect } from "react";
 import React from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Sécurité: désactiver tous les logs en production
 if (!__DEV__) {
@@ -90,6 +91,7 @@ export default function Layout() {
   }, []);
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <AuthProvider>
       <ThemeProvider>
         <LevelProvider>
@@ -120,5 +122,6 @@ export default function Layout() {
         </LevelProvider>
       </ThemeProvider>
     </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
