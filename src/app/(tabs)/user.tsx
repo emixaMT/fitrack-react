@@ -6,7 +6,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../../../config/supabaseConfig';
 import { getUserProfile } from '../../../services/userService';
 import WeightChart from '../../../components/weightChart';
-import HeaderAvatar, { HeroAvatar } from '../../../components/HeaderAvatar';
 import { useHeaderAvatar } from '../../../hooks/useHeaderAvatar';
 import { useBadges } from '../../../hooks/useBadges';
 import { BadgeItem } from '../../../components/badges';
