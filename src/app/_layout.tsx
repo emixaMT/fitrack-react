@@ -88,18 +88,23 @@ export default function Layout() {
             <Stack
               screenOptions={{
                 headerShown: false,
-                animation: 'slide_from_right',
-                animationDuration: 300,
+                // Transition moderne : fade subtil + léger mouvement vers le haut
+                // Pas de slide horizontal = pas de sensation de chargement
+                animation: 'fade_from_bottom',
+                animationDuration: 250,
+                presentation: 'card',
+                // Fond transparent pour éviter le flash blanc/noir
+                contentStyle: { backgroundColor: 'transparent' },
               }}
             >
               <Stack.Screen name="(auth)" options={{ animation: 'fade' }} />
               <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
-              <Stack.Screen name="seances/[id]" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="seances/create/step1" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="seances/create/step2" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="seances/edit/[id]" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="notes/create" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="compte/edit-perfs" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="seances/[id]" />
+              <Stack.Screen name="seances/create/step1" />
+              <Stack.Screen name="seances/create/step2" />
+              <Stack.Screen name="seances/edit/[id]" />
+              <Stack.Screen name="notes/create" />
+              <Stack.Screen name="compte/edit-perfs" />
             </Stack>
           </BadgeUnlockProvider>
         </LevelProvider>
