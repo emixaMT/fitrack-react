@@ -12,6 +12,7 @@ import { cardStyle } from "../../../utils/styles";
 import { importSeance, readJsonFile } from "../../../services/seanceIO";
 import * as DocumentPicker from "expo-document-picker";
 import { Toast } from "../../../components/Toast";
+import { SwipeableRow } from "../../../components/SwipeableRow";
 
 const PAGE_SIZE = 20;
 const screenWidth = Dimensions.get('window').width;
@@ -182,36 +183,38 @@ export default function WorkoutScreen() {
     const endurance = isEndurance(s.category);
     const cat = getCatConfig(s.category);
     return (
-      <Pressable
-        onPress={() => router.push(`/seances/${s.id}`)}
-        onLongPress={() => openMenu(s.id)}
-        delayLongPress={400}
-        style={[cardStyle(colors, 'sm'), { padding: 16, marginBottom: 10 }]}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          {/* Category icon */}
-          <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: cat.color + '22', alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name={cat.icon as any} size={24} color={cat.color} />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }} numberOfLines={1}>{s.nom}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <View style={{ backgroundColor: cat.color + '22', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
-                <Text style={{ fontSize: 11, fontWeight: '600', color: cat.color }}>{cat.label}</Text>
-              </View>
-              {!endurance && (
-                <Text style={{ fontSize: 12, color: colors.textSecondary }}>{s.exercices?.length ?? 0} exercice(s)</Text>
-              )}
-              {s.created_at && (
-                <Text style={{ fontSize: 12, color: colors.textTertiary }}>{formatDate(s.created_at)}</Text>
-              )}
+      <SwipeableRow onDelete={() => handleDelete(s.id)}>
+        <Pressable
+          onPress={() => router.push(`/seances/${s.id}`)}
+          onLongPress={() => openMenu(s.id)}
+          delayLongPress={400}
+          style={[cardStyle(colors, 'sm'), { padding: 16, marginBottom: 10 }]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            {/* Category icon */}
+            <View style={{ width: 52, height: 52, borderRadius: 14, backgroundColor: cat.color + '22', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name={cat.icon as any} size={24} color={cat.color} />
             </View>
-          </View>
 
-          <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-        </View>
-      </Pressable>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }} numberOfLines={1}>{s.nom}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <View style={{ backgroundColor: cat.color + '22', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: cat.color }}>{cat.label}</Text>
+                </View>
+                {!endurance && (
+                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>{s.exercices?.length ?? 0} exercice(s)</Text>
+                )}
+                {s.created_at && (
+                  <Text style={{ fontSize: 12, color: colors.textTertiary }}>{formatDate(s.created_at)}</Text>
+                )}
+              </View>
+            </View>
+
+            <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+          </View>
+        </Pressable>
+      </SwipeableRow>
     );
   };
 
