@@ -4,7 +4,6 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { Platform } from "react-native";
 import { useEffect } from "react";
-import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Sécurité: désactiver tous les logs en production
@@ -22,6 +21,7 @@ import { ThemeProvider } from "../../contexts/ThemeContext";
 import { LevelProvider } from "../../contexts/LevelContext";
 import { AuthProvider, useAuth } from "../../contexts/AuthContext";
 import { BadgeUnlockProvider } from "../../components/badges/BadgeUnlockProvider";
+import { log, logError, logWarn } from "../../utils/logger";
 
 
 async function registerForPushNotificationsAsync() {
@@ -68,15 +68,15 @@ function BadgeChecker() {
     checkWithTimeout
       .then((newBadges) => {
         if (newBadges.length > 0 && __DEV__) {
-          console.log(`🎉 ${newBadges.length} nouveau(x) badge(s) débloqué(s)`);
+          log(`🎉 ${newBadges.length} nouveau(x) badge(s) débloqué(s)`);
         }
       })
       .catch((error) => {
         if (__DEV__) {
           if (error.message.includes('Timeout')) {
-            console.warn('⚠️ Vérification badges timeout');
+            logWarn('⚠️ Vérification badges timeout');
           } else {
-            console.error('❌ Erreur vérification badges:', error);
+            logError('❌ Erreur vérification badges:', error);
           }
         }
       });

@@ -152,8 +152,8 @@ export const challenges: ChallengeDetails[] = [
   },
   {
     id: 10,
-    titre: 'Tractions (ou tirage élastique) (Classique)',
-    explication: 'Réalise 4 à 5 séries de Tractions (ou tirage élastique). Choisis une plage de répétitions adaptée (8–12 pour la force-endurance).',
+    titre: 'Tractions (ou tirage élastique) (Pyramide 1-10)',
+    explication: 'Pyramide 1-10 = Faire 1 répétition, pause courte, puis 2, puis 3… jusqu’à 10 répétitions. Utilise Tractions (ou tirage élastique) et garde une respiration régulière.',
     but: 'Développer la force-endurance et améliorer le contrôle moteur.',
     exerciceType: 'Tractions (ou tirage élastique)',
     musclesCibles: ['Dos', 'Biceps', 'Épaules', 'Tronc'],
@@ -163,7 +163,7 @@ export const challenges: ChallengeDetails[] = [
     difficulte: 'Intermédiaire',
     icon: '🏗️',
     categorie: 'Musculation',
-    dureeEstimee: '10-20 min',
+    dureeEstimee: '15-20 min',
   },
   {
     id: 11,

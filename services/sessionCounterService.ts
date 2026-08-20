@@ -1,6 +1,7 @@
 // FILE: services/sessionCounterService.ts
 import { supabase } from '../config/supabaseConfig';
 import { SportKey } from '../constants/sport';
+import { logError } from '../utils/logger';
 
 export interface SessionCounter {
   id: string;
@@ -46,13 +47,13 @@ export const incrementSessionCounter = async (
     });
 
     if (error) {
-      console.error('Error incrementing session counter:', error);
+      logError('Error incrementing session counter:', error);
       throw error;
     }
 
     return data as number;
   } catch (error) {
-    console.error('Error in incrementSessionCounter:', error);
+    logError('Error in incrementSessionCounter:', error);
     throw error;
   }
 };
@@ -74,13 +75,13 @@ export const getMonthlyCounters = async (
       .eq('month_key', targetMonth);
 
     if (error) {
-      console.error('Error fetching monthly counters:', error);
+      logError('Error fetching monthly counters:', error);
       throw error;
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getMonthlyCounters:', error);
+    logError('Error in getMonthlyCounters:', error);
     return [];
   }
 };
@@ -113,7 +114,7 @@ export const getMonthlyStats = async (
 
     return stats;
   } catch (error) {
-    console.error('Error in getMonthlyStats:', error);
+    logError('Error in getMonthlyStats:', error);
     return {
       musculation: 0,
       crossfit: 0,
@@ -136,13 +137,13 @@ export const getAllCounters = async (userId: string): Promise<SessionCounter[]> 
       .order('month_key', { ascending: false });
 
     if (error) {
-      console.error('Error fetching all counters:', error);
+      logError('Error fetching all counters:', error);
       throw error;
     }
 
     return data || [];
   } catch (error) {
-    console.error('Error in getAllCounters:', error);
+    logError('Error in getAllCounters:', error);
     return [];
   }
 };
@@ -155,7 +156,7 @@ export const getMonthlyTotal = async (userId: string): Promise<number> => {
     const stats = await getMonthlyStats(userId);
     return stats.total;
   } catch (error) {
-    console.error('Error in getMonthlyTotal:', error);
+    logError('Error in getMonthlyTotal:', error);
     return 0;
   }
 };
@@ -171,14 +172,14 @@ export const getTotalHistoricalSessions = async (userId: string): Promise<number
       .eq('user_id', userId);
 
     if (error) {
-      console.error('Error fetching total historical sessions:', error);
+      logError('Error fetching total historical sessions:', error);
       throw error;
     }
 
     const total = data?.reduce((sum, counter) => sum + counter.count, 0) || 0;
     return total;
   } catch (error) {
-    console.error('Error in getTotalHistoricalSessions:', error);
+    logError('Error in getTotalHistoricalSessions:', error);
     return 0;
   }
 };
@@ -195,14 +196,14 @@ export const getTotalByType = async (userId: string, sportType: SportKey): Promi
       .eq('sport_type', sportType);
 
     if (error) {
-      console.error('Error fetching total by type:', error);
+      logError('Error fetching total by type:', error);
       throw error;
     }
 
     const total = data?.reduce((sum, counter) => sum + counter.count, 0) || 0;
     return total;
   } catch (error) {
-    console.error('Error in getTotalByType:', error);
+    logError('Error in getTotalByType:', error);
     return 0;
   }
 };
@@ -226,11 +227,11 @@ export const resetCounter = async (
       .eq('sport_type', sportType);
 
     if (error) {
-      console.error('Error resetting counter:', error);
+      logError('Error resetting counter:', error);
       throw error;
     }
   } catch (error) {
-    console.error('Error in resetCounter:', error);
+    logError('Error in resetCounter:', error);
     throw error;
   }
 };

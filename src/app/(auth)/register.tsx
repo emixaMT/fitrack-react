@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../../config/supabaseConfig";
 import { register } from "../../../services/supabaseAuth";
 import { useTheme } from "../../../contexts/ThemeContext";
-import React from "react";
 import { router } from "expo-router";
 import { PASSWORD_REGEX } from '../../../utils/validation';
 

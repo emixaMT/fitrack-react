@@ -2,6 +2,7 @@
 import { supabase } from '../config/supabaseConfig';
 import { BADGE_IMAGES } from '../constants/badgeImages';
 import { getTotalHistoricalSessions, getTotalByType } from './sessionCounterService';
+import { logError } from '../utils/logger';
 import type { ImageSourcePropType } from 'react-native';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -87,7 +88,7 @@ export const getAllBadges = async (): Promise<Badge[]> => {
       image_local: BADGE_IMAGES[badge.code] || null,
     }));
   } catch (error) {
-    console.error('Error fetching badges:', error);
+    logError('Error fetching badges:', error);
     throw error;
   }
 };
@@ -117,7 +118,7 @@ export const getUserBadges = async (userId: string): Promise<UserBadge[]> => {
       } : undefined,
     }));
   } catch (error) {
-    console.error('Error fetching user badges:', error);
+    logError('Error fetching user badges:', error);
     throw error;
   }
 };
@@ -148,7 +149,7 @@ export const getNewBadges = async (userId: string): Promise<UserBadge[]> => {
       } : undefined,
     }));
   } catch (error) {
-    console.error('Error fetching new badges:', error);
+    logError('Error fetching new badges:', error);
     throw error;
   }
 };
@@ -192,7 +193,7 @@ export const getUserBadgeStats = async (userId: string): Promise<BadgeStats | nu
 
     return stats;
   } catch (error) {
-    console.error('Error fetching badge stats:', error);
+    logError('Error fetching badge stats:', error);
     return null;
   }
 };
@@ -214,7 +215,7 @@ export const unlockBadge = async (userId: string, badgeCode: string): Promise<Us
       .single();
 
     if (badgeError || !badge) {
-      console.error('Badge not found:', badgeCode);
+      logError('Badge not found:', badgeCode);
       return null;
     }
 
@@ -253,7 +254,7 @@ export const unlockBadge = async (userId: string, badgeCode: string): Promise<Us
     
     return data;
   } catch (error) {
-    console.error('Error unlocking badge:', error);
+    logError('Error unlocking badge:', error);
     throw error;
   }
 };
@@ -270,7 +271,7 @@ export const markBadgeAsSeen = async (userBadgeId: string): Promise<void> => {
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error marking badge as seen:', error);
+    logError('Error marking badge as seen:', error);
     throw error;
   }
 };
@@ -288,7 +289,7 @@ export const markAllBadgesAsSeen = async (userId: string): Promise<void> => {
 
     if (error) throw error;
   } catch (error) {
-    console.error('Error marking all badges as seen:', error);
+    logError('Error marking all badges as seen:', error);
     throw error;
   }
 };
@@ -365,7 +366,7 @@ const checkMonthlyGoal = async (userId: string): Promise<boolean> => {
     const seanceCount = seances?.length || 0;
     return seanceCount >= monthlyGoal;
   } catch (error) {
-    console.error('Error checking monthly goal:', error);
+    logError('Error checking monthly goal:', error);
     return false;
   }
 };
@@ -416,7 +417,7 @@ const checkConsecutiveMonthlyGoals = async (userId: string, requiredMonths: numb
 
     return false;
   } catch (error) {
-    console.error('Error checking consecutive monthly goals:', error);
+    logError('Error checking consecutive monthly goals:', error);
     return false;
   }
 };
@@ -609,7 +610,7 @@ export const checkAndUnlockBadges = async (userId: string): Promise<UserBadge[]>
 
     return unlockedBadges;
   } catch (error) {
-    console.error('Error checking badges:', error);
+    logError('Error checking badges:', error);
     return unlockedBadges;
   }
 };

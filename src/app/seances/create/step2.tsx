@@ -17,6 +17,7 @@ import { checkAndUnlockBadges } from '../../../../services/badgeService';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useExerciseRecords } from '../../../../hooks/useExerciseRecords';
+import { logError } from '../../../../utils/logger';
 import React from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -133,7 +134,7 @@ export default function Step2() {
       // Redirection vers home pour voir le slider se rafraîchir
       router.replace('/home');
     } catch (e) {
-      console.error(e);
+      logError(e);
       Alert.alert('Erreur', "Impossible d'enregistrer la séance");
     }
   };

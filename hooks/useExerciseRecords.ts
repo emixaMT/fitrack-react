@@ -62,7 +62,7 @@ export function useExerciseRecords(userId: string | undefined) {
             const existing = recordMap[name];
             if (!existing || volume > existing.maxVolume) {
               recordMap[name] = {
-                exerciseName: exo.nom,
+                exerciseName: exo.nom ?? '',
                 maxVolume: volume,
                 maxCharge: charge,
                 maxReps: reps,

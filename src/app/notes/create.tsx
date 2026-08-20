@@ -13,8 +13,8 @@ import { useRouter } from 'expo-router';
 import { supabase } from '../../../config/supabaseConfig';
 import { checkAndUnlockBadges } from '../../../services/badgeService';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React from 'react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { logError } from '../../../utils/logger';
 
 export default function CreateNote() {
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function CreateNote() {
       
       router.push('/note');
     } catch (e) {
-      console.error(e);
+      logError(e);
       Alert.alert('Erreur', "Impossible d'enregistrer la note.");
     } finally {
       setSaving(false);

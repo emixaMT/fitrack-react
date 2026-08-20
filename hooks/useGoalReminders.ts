@@ -64,6 +64,7 @@ async function scheduleGoalReminder() {
       data: { tag: GOAL_TAG },
     },
     trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
       seconds: 60 * 60 * 24 * 3, // 72h
       repeats: true,
       channelId: Platform.OS === 'android' ? 'goal-reminders' : undefined,

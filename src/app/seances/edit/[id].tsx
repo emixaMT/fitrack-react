@@ -16,6 +16,7 @@ import { supabase } from "../../../../config/supabaseConfig";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useTheme } from "../../../../contexts/ThemeContext";
 import { safeUUID } from "../../../../utils/validation";
+import { logError } from "../../../../utils/logger";
 
 type Exercice = { nom: string; series?: number | null; reps?: number | null; charge?: number | null };
 type Seance = { nom: string; id_user: string; exercices: Exercice[] };
@@ -83,7 +84,7 @@ export default function EditSeanceScreen() {
             : [{ nom: "", series: null, reps: null, charge: null }]
         );
       } catch (e) {
-        console.error(e);
+        logError(e);
         Alert.alert("Erreur", "Impossible de charger la séance.");
         router.back();
       } finally {
@@ -154,7 +155,7 @@ export default function EditSeanceScreen() {
 
       router.back();
     } catch (e) {
-      console.error(e);
+      logError(e);
       Alert.alert("Erreur", "Impossible d'enregistrer les modifications.");
     } finally {
       setSaving(false);

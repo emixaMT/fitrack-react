@@ -13,6 +13,7 @@ import { useTheme } from "../../../contexts/ThemeContext";
 import { AVATAR_IDS, DEFAULT_AVATAR, getAvatarSourceById } from "../../../constants/avatars";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { logError } from "../../../utils/logger";
 
 type RunningPerf = { label: string; value: string };
 type HyroxPerf = { label: string; value: string; type: "solo" | "double" };
@@ -74,7 +75,7 @@ export default function EditPerformances() {
           setHyrox(Array.isArray(perfData.hyrox) ? perfData.hyrox : []);
         }
       } catch (e) {
-        console.error("Error loading performances:", e);
+        logError("Error loading performances:", e);
       }
 
       try {
@@ -93,7 +94,7 @@ export default function EditPerformances() {
           }
         }
       } catch (e) {
-        console.error("Error loading user profile:", e);
+        logError("Error loading user profile:", e);
       }
 
       try {
@@ -111,7 +112,7 @@ export default function EditPerformances() {
           setWeights(items);
         }
       } catch (e) {
-        console.error("Error loading weights:", e);
+        logError("Error loading weights:", e);
       }
     };
 
@@ -137,7 +138,7 @@ export default function EditPerformances() {
         .eq("id", user.id);
 
       if (error) {
-        console.error("Avatar update error:", error);
+        logError("Avatar update error:", error);
         throw error;
       }
 
@@ -146,7 +147,7 @@ export default function EditPerformances() {
       setAvatarSheetVisible(false);
       Alert.alert("Succès", "Photo mise à jour !");
     } catch (e: unknown) {
-      console.error("Avatar error:", e);
+      logError("Avatar error:", e);
       Alert.alert("Erreur", "Impossible de mettre à jour l'avatar.");
     } finally { setSavingAvatar(false); }
   }
@@ -181,7 +182,7 @@ export default function EditPerformances() {
         .upload(fileName, file as unknown as Blob, { upsert: true });
 
       if (uploadError) {
-        console.error("Upload error:", uploadError);
+        logError("Upload error:", uploadError);
         throw uploadError;
       }
 
@@ -194,7 +195,7 @@ export default function EditPerformances() {
         .eq("id", user.id);
 
       if (updateError) {
-        console.error("Profile update error:", updateError);
+        logError("Profile update error:", updateError);
         throw updateError;
       }
 
@@ -203,7 +204,7 @@ export default function EditPerformances() {
       setAvatarSheetVisible(false);
       Alert.alert("Succès", "Photo mise à jour !");
     } catch (e: unknown) {
-      console.error("Import photo error:", e);
+      logError("Import photo error:", e);
       Alert.alert("Erreur", "Impossible d'importer la photo.");
     } finally {
       setSavingAvatar(false);
@@ -222,7 +223,7 @@ export default function EditPerformances() {
         .insert({ user_id: user.id, value, date: new Date().toISOString() });
 
       if (error) {
-        console.error("Weight insert error:", error);
+        logError("Weight insert error:", error);
         throw error;
       }
 
@@ -245,7 +246,7 @@ export default function EditPerformances() {
         })));
       }
     } catch (e: unknown) {
-      console.error("Weight error:", e);
+      logError("Weight error:", e);
       Alert.alert("Erreur", "Impossible d'ajouter le poids.");
     }
   };
@@ -269,7 +270,7 @@ export default function EditPerformances() {
         });
 
       if (error) {
-        console.error("Performance save error:", error);
+        logError("Performance save error:", error);
         throw error;
       }
 
@@ -278,7 +279,7 @@ export default function EditPerformances() {
       Alert.alert("Données mises à jour.");
       router.push("/user");
     } catch (e: unknown) {
-      console.error("Save error:", e);
+      logError("Save error:", e);
       Alert.alert("Erreur", "Impossible de sauvegarder.");
     }
     finally { setSaving(false); }

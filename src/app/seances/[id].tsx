@@ -10,6 +10,7 @@ import { useTheme } from "../../../contexts/ThemeContext";
 import { safeUUID } from "../../../utils/validation";
 import { exportSeance } from "../../../services/seanceIO";
 import { Toast } from "../../../components/Toast";
+import { logError } from "../../../utils/logger";
 import React from "react";
 
 type Objectifs = {
@@ -64,7 +65,7 @@ export default function SeanceDetail() {
           .single();
 
         if (error || !data) {
-          console.error('Error loading seance:', error);
+          logError('Error loading seance:', error);
           router.back();
           return;
         }
@@ -77,7 +78,7 @@ export default function SeanceDetail() {
           exercices: data.exercices,
         });
       } catch (e) {
-        console.error(e);
+        logError(e);
       } finally {
         setLoading(false);
       }
