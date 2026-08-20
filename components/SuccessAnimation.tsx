@@ -26,20 +26,26 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   useEffect(() => {
     if (visible) {
-      lottieRef.current?.play();
+      // Petit delai pour laisser le Modal monter avant de jouer l'animation
+      const playTimer = setTimeout(() => {
+        lottieRef.current?.play();
+      }, 100);
       timerRef.current = setTimeout(() => {
         onDone();
       }, duration);
-    }
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+      return () => {
+        clearTimeout(playTimer);
+        if (timerRef.current) clearTimeout(timerRef.current);
+      };
+    }
   }, [visible, duration, onDone]);
 
   const source = require('../assets/animations/check.json');
-
   const defaultMessage = type === 'export' ? 'Séance exportée !' : 'Séance importée !';
+
+  // Ne rendre le LottieView que quand visible pour forcer un remount propre
+  if (!visible) return null;
 
   return (
     <Modal
@@ -51,12 +57,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       <View style={styles.overlay}>
         <View style={[styles.card, { backgroundColor: colors.card }]}>
           <LottieView
+            key="check-anim"
             ref={lottieRef}
             source={source}
             style={{ width: 140, height: 140 }}
             autoPlay
             loop={false}
             speed={1}
+            resizeMode="cover"
           />
           <Text style={[styles.text, { color: colors.text }]}>
             {message ?? defaultMessage}
