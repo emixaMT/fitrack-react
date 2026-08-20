@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../../config/supabaseConfig';
-import { sportsMeta, SportKey } from '../../../../constantes/sport';
+import { sportsMeta, SportKey } from '../../../../constants/sport';
 import { checkAndUnlockBadges } from '../../../../services/badgeService';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { useAuth } from '../../../../contexts/AuthContext';

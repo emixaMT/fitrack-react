@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import Svg, { Circle, G, Text as SvgText, Path } from 'react-native-svg';
 import { supabase } from '../config/supabaseConfig';
-import { SportKey, sportsMeta } from '../constantes/sport';
+import { SportKey, sportsMeta } from '../constants/sport';
 import { useTheme } from '../contexts/ThemeContext';
 import { getMonthlyStats } from '../services/sessionCounterService';
 

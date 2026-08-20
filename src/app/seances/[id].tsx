@@ -5,7 +5,7 @@ import { View, Text, ScrollView, ActivityIndicator, Pressable } from "react-nati
 import { LinearGradient } from "expo-linear-gradient";
 import { supabase } from "../../../config/supabaseConfig";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { sportsMeta } from "../../../constantes/sport";
+import { sportsMeta } from "../../../constants/sport";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { safeUUID } from "../../../utils/validation";
 import { exportSeance } from "../../../services/seanceIO";

@@ -1,6 +1,6 @@
 // FILE: services/badgeService.ts
 import { supabase } from '../config/supabaseConfig';
-import { BADGE_IMAGES } from '../constantes/badgeImages';
+import { BADGE_IMAGES } from '../constants/badgeImages';
 import { getTotalHistoricalSessions, getTotalByType } from './sessionCounterService';
 import type { ImageSourcePropType } from 'react-native';
 

@@ -10,7 +10,7 @@ import { supabase } from "../../../config/supabaseConfig";
 import { checkAndUnlockBadges } from "../../../services/badgeService";
 import { router } from "expo-router";
 import { useTheme } from "../../../contexts/ThemeContext";
-import { AVATAR_IDS, DEFAULT_AVATAR, getAvatarSourceById } from "../../../constantes/avatars";
+import { AVATAR_IDS, DEFAULT_AVATAR, getAvatarSourceById } from "../../../constants/avatars";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 

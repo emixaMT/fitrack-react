@@ -1,6 +1,6 @@
 // FILE: services/sessionCounterService.ts
 import { supabase } from '../config/supabaseConfig';
-import { SportKey } from '../constantes/sport';
+import { SportKey } from '../constants/sport';
 
 export interface SessionCounter {
   id: string;

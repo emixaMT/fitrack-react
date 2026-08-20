@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { sportsMeta, SportKey } from '../../../../constantes/sport';
+import { sportsMeta, SportKey } from '../../../../constants/sport';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../../../../contexts/ThemeContext';
 

@@ -6,7 +6,7 @@ import { register } from "../../../services/supabaseAuth";
 import { useTheme } from "../../../contexts/ThemeContext";
 import React from "react";
 import { router } from "expo-router";
-import { PASSWORD_REGEX } from '../../utils/validation';
+import { PASSWORD_REGEX } from '../../../utils/validation';
 
 export default function RegisterScreen() {
   const { colors } = useTheme();

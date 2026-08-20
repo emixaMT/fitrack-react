@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, View, Text, Pressable } from 'react-native';
-import { sportsMeta, SportKey } from '../constantes/sport';
+import { sportsMeta, SportKey } from '../constants/sport';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { cardStyle, cardShadow } from '../utils/styles';

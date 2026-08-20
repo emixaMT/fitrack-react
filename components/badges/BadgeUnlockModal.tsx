@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { Badge } from '../../services/badgeService';
-import { getBadgeImage } from '../../constantes/badgeImages';
+import { getBadgeImage } from '../../constants/badgeImages';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface BadgeUnlockModalProps {

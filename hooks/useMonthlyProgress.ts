@@ -4,7 +4,7 @@ import { supabase } from '../config/supabaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { incrementSessionCounter } from '../services/sessionCounterService';
 import { checkAndUnlockBadges } from '../services/badgeService';
-import { SportKey } from '../constantes/sport';
+import { SportKey } from '../constants/sport';
 import { cancelGoalReminders } from './useGoalReminders';
 
 const MONTHLY_TARGET_DEFAULT = 10;

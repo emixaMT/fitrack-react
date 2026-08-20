@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
 import { supabase } from "../config/supabaseConfig";
-import { getAvatarSourceById } from "../constantes/avatars";
+import { getAvatarSourceById } from "../constants/avatars";
 
 export function useHeaderAvatar(fallback: ImageSourcePropType) {
   const [source, setSource] = useState<ImageSourcePropType>(fallback);
