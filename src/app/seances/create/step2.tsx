@@ -15,6 +15,8 @@ import { supabase } from '../../../../config/supabaseConfig';
 import { sportsMeta, SportKey } from '../../../../constantes/sport';
 import { checkAndUnlockBadges } from '../../../../services/badgeService';
 import { useTheme } from '../../../../contexts/ThemeContext';
+import { useAuth } from '../../../../contexts/AuthContext';
+import { useExerciseRecords } from '../../../../hooks/useExerciseRecords';
 import React from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -22,6 +24,8 @@ type Exercice = { nom: string; series?: number | null; reps?: number | null; cha
 
 export default function Step2() {
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const { getRecord, loading: recordsLoading } = useExerciseRecords(user?.id);
   const { sport } = useLocalSearchParams<{ sport: SportKey }>();
   const router = useRouter();
 
@@ -201,11 +205,39 @@ export default function Step2() {
                   value={exo.nom}
                   onChangeText={(t) => updateExo(idx, 'nom', t)}
                   placeholder="Nom (ex: Squat)"
-                  className="border rounded-xl px-4 py-3 mb-3"
+                  className="border rounded-xl px-4 py-3 mb-1"
                   style={{ borderColor: colors.border, backgroundColor: colors.divider, color: colors.text }}
                   placeholderTextColor={colors.textTertiary}
                   maxLength={50}
                 />
+                {(() => {
+                  const name = exo.nom.trim();
+                  if (!name || recordsLoading) return null;
+                  const record = getRecord(name);
+                  if (!record) return null;
+                  const currentVolume =
+                    exo.charge != null && exo.reps != null
+                      ? exo.charge * exo.reps
+                      : exo.charge ?? 0;
+                  const isNewRecord =
+                    currentVolume > 0 && currentVolume > record.maxVolume;
+                  if (isNewRecord) {
+                    return (
+                      <Text
+                        style={{ color: '#FFD700', fontSize: 11, marginBottom: 8, marginLeft: 2 }}
+                      >
+                        🏆 Nouveau record !
+                      </Text>
+                    );
+                  }
+                  return (
+                    <Text
+                      style={{ color: colors.textTertiary, fontSize: 11, marginBottom: 8, marginLeft: 2 }}
+                    >
+                      Record: {record.maxCharge ?? '—'}kg × {record.maxReps ?? '—'}
+                    </Text>
+                  );
+                })()}
 
                 <View className="flex-row justify-between">
                   <View className="w-[32%]">

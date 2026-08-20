@@ -11,6 +11,8 @@ import { checkAndUnlockBadges } from "../../../services/badgeService";
 import { router } from "expo-router";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { AVATAR_IDS, DEFAULT_AVATAR, getAvatarSourceById } from "../../../constantes/avatars";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 
 type RunningPerf = { label: string; value: string };
 type HyroxPerf = { label: string; value: string; type: "solo" | "double" };
@@ -133,6 +135,65 @@ export default function EditPerformances() {
       console.error("Avatar error:", e);
       Alert.alert("Erreur", "Impossible de mettre à jour l'avatar.");
     } finally { setSavingAvatar(false); }
+  }
+
+  async function handleImportPhoto() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { Alert.alert("Session requise", "Veuillez vous reconnecter."); return; }
+
+    const pickerResult = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (pickerResult.canceled || !pickerResult.assets || pickerResult.assets.length === 0) {
+      return;
+    }
+
+    setSavingAvatar(true);
+    try {
+      const ext = pickerResult.assets[0].uri.split(".").pop() || "jpg";
+      const fileName = `avatars/${user.id}.${ext}`;
+      const file = {
+        uri: pickerResult.assets[0].uri,
+        type: `image/${ext}`,
+        name: fileName,
+      } as any;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(fileName);
+      const publicUrl = urlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ photo_url: publicUrl, avatar_id: publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.error("Profile update error:", updateError);
+        throw updateError;
+      }
+
+      setSelectedAvatarId(publicUrl);
+      setAvatarSource({ uri: publicUrl });
+      setAvatarSheetVisible(false);
+      Alert.alert("Succès", "Photo mise à jour !");
+    } catch (e: unknown) {
+      console.error("Import photo error:", e);
+      Alert.alert("Erreur", "Impossible d'importer la photo.");
+    } finally {
+      setSavingAvatar(false);
+    }
   }
 
   const addWeight = async () => {
@@ -394,6 +455,27 @@ export default function EditPerformances() {
                 );
               })}
             </View>
+            <Pressable
+              onPress={handleImportPhoto}
+              disabled={savingAvatar}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                backgroundColor: colors.primary,
+                paddingVertical: 14,
+                borderRadius: 12,
+                marginTop: 8,
+                marginBottom: 12,
+                opacity: savingAvatar ? 0.6 : 1,
+              }}
+            >
+              <Ionicons name="image-outline" size={20} color="#fff" />
+              <Text style={{ color: "#fff", fontWeight: "600" }}>
+                {savingAvatar ? "Mise à jour..." : "Importer depuis la galerie"}
+              </Text>
+            </Pressable>
             <Pressable onPress={() => setAvatarSheetVisible(false)} style={{ marginTop: 8, backgroundColor: colors.divider, paddingVertical: 12, borderRadius: 12 }}>
               <Text style={{ textAlign: 'center', color: colors.textSecondary }}>Fermer</Text>
             </Pressable>

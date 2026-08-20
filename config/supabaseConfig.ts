@@ -1,6 +1,5 @@
 // FILE: config/supabaseConfig.ts
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
@@ -23,8 +22,8 @@ if (!supabaseUrl.startsWith('https://')) {
 }
 
 // Configuration du storage selon la plateforme
-// - Web: localStorage (par défaut Supabase)
-// - Mobile: SecureStore (chiffré par le système)
+// - Web: undefined → Supabase utilise localStorage par défaut
+// - Mobile: SecureStore (chiffré par le système — Keychain iOS / Keystore Android)
 const authStorage = Platform.OS === 'web'
   ? undefined
   : {

@@ -8,6 +8,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { sportsMeta } from "../../../constantes/sport";
 import { useTheme } from "../../../contexts/ThemeContext";
 import { safeUUID } from "../../../utils/validation";
+import { exportSeance } from "../../../services/seanceIO";
 import React from "react";
 
 type Objectifs = {
@@ -43,10 +44,12 @@ export default function SeanceDetail() {
 
   const [seance, setSeance] = useState<Seance | null>(null);
   const [loading, setLoading] = useState(true);
+  const [seanceId, setSeanceId] = useState<string | null>(null);
 
   useEffect(() => {
     const safeId = safeUUID(id);
     if (!safeId) { router.back(); return; }
+    setSeanceId(safeId);
     (async () => {
       try {
         const { data, error } = await supabase
@@ -103,6 +106,13 @@ export default function SeanceDetail() {
         <LinearGradient colors={[colors.primaryLight, colors.primary]} style={{ position: "absolute", inset: 0 }} />
         <Pressable onPress={() => router.push("/workout")} className="absolute top-16 left-4 rounded-full p-2" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}>
           <Ionicons name="arrow-back" size={22} color="#fff" />
+        </Pressable>
+        <Pressable
+          onPress={() => { if (seanceId) exportSeance(seanceId); }}
+          className="absolute top-16 right-4 rounded-full p-2"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+        >
+          <Ionicons name="share-outline" size={22} color="#fff" />
         </Pressable>
 
         <View className="flex-1 justify-center items-center">

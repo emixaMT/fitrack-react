@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { cardStyle } from "../../../utils/styles";
+import { importSeance, readJsonFile } from "../../../services/seanceIO";
+import * as DocumentPicker from "expo-document-picker";
 
 const PAGE_SIZE = 20;
 const screenWidth = Dimensions.get('window').width;
@@ -90,6 +92,42 @@ export default function WorkoutScreen() {
 
   const handleRefresh = () => { if (!user) return; setRefreshing(true); loadSeances(user.id, true); };
   const handleLoadMore = () => { if (!user || loadingMore || !hasMore) return; setLoadingMore(true); loadSeances(user.id, false); };
+
+  const handleImport = useCallback(async () => {
+    if (!user) { Alert.alert("Session requise", "Veuillez vous reconnecter."); return; }
+    try {
+      if (Platform.OS === "web") {
+        // Web: trigger hidden file input
+        const input = document.getElementById("import-seance-input") as HTMLInputElement | null;
+        if (input) { input.value = ""; input.click(); }
+        return;
+      }
+      // Mobile: use DocumentPicker
+      const result = await DocumentPicker.getDocumentAsync({ type: "application/json", copyToCacheDirectory: true });
+      if (result.canceled || !result.assets || result.assets.length === 0) return;
+      const file = result.assets[0];
+      const content = await readJsonFile(file.uri);
+      const res = await importSeance(content, user.id);
+      Alert.alert(res.success ? "Import" : "Erreur", res.message);
+      if (res.success) loadSeances(user.id, true);
+    } catch (e) {
+      Alert.alert("Erreur", "Impossible d'importer le fichier.");
+    }
+  }, [user, loadSeances]);
+
+  const handleWebFilePicked = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const res = await importSeance(text, user.id);
+      Alert.alert(res.success ? "Import" : "Erreur", res.message);
+      if (res.success) loadSeances(user.id, true);
+    } catch {
+      Alert.alert("Erreur", "Impossible de lire le fichier.");
+    }
+  }, [user, loadSeances]);
 
   async function handleDelete(id: string) {
     Alert.alert("Supprimer", "Définitif ?", [
@@ -206,11 +244,19 @@ export default function WorkoutScreen() {
         ListHeaderComponent={
           <View style={{ paddingBottom: 8 }}>
             {/* Title header */}
-            <View style={{ paddingHorizontal: 16, paddingTop: 56, marginBottom: 16 }}>
-              <Text style={{ fontSize: 30, fontWeight: '800', color: colors.text }}>Séances</Text>
-              <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 4 }}>
-                {allSeances.length} séance{allSeances.length > 1 ? 's' : ''} au total
-              </Text>
+            <View style={{ paddingHorizontal: 16, paddingTop: 56, marginBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View>
+                <Text style={{ fontSize: 30, fontWeight: '800', color: colors.text }}>Séances</Text>
+                <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 4 }}>
+                  {allSeances.length} séance{allSeances.length > 1 ? 's' : ''} au total
+                </Text>
+              </View>
+              <Pressable
+                onPress={handleImport}
+                style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary + '22', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <Ionicons name="cloud-download-outline" size={22} color={colors.primary} />
+              </Pressable>
             </View>
 
             {/* Category filters */}
@@ -263,6 +309,16 @@ export default function WorkoutScreen() {
           <Ionicons name="add" size={28} color="#fff" />
         </View>
       </Pressable>
+
+      {Platform.OS === "web" && (
+        <input
+          id="import-seance-input"
+          type="file"
+          accept=".json,application/json"
+          style={{ display: "none" }}
+          onChange={handleWebFilePicked}
+        />
+      )}
     </>
   );
 }
