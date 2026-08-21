@@ -16,6 +16,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../../../config/supabaseConfig';
 import { sportsMeta, SportKey } from '../../../../constants/sport';
+import { workoutTemplates } from '../../../../constants/workoutTemplates';
 import { checkAndUnlockBadges } from '../../../../services/badgeService';
 import { useTheme } from '../../../../contexts/ThemeContext';
 import { useAuth } from '../../../../contexts/AuthContext';
@@ -55,25 +56,28 @@ export default function Step2() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const { getRecord, loading: recordsLoading } = useExerciseRecords(user?.id);
-  const { sport } = useLocalSearchParams<{ sport: SportKey }>();
+  const { sport, templateId } = useLocalSearchParams<{ sport: SportKey; templateId?: string }>();
   const router = useRouter();
 
   const meta = sport ? sportsMeta[sport] : null;
+  const template = templateId ? workoutTemplates.find((t) => t.id === templateId) : null;
 
   // commun
-  const [nomSeance, setNomSeance] = useState('');
+  const [nomSeance, setNomSeance] = useState(template?.name ?? '');
   const nomRef = useRef<TextInput>(null);
 
   // force
-  const [exercices, setExercices] = useState<Exercice[]>([
-    { nom: '', series: null, reps: null, charge: null },
-  ]);
+  const [exercices, setExercices] = useState<Exercice[]>(
+    template?.exercices
+      ? template.exercices.map((e) => ({ nom: e.nom, series: e.series, reps: e.reps, charge: e.charge }))
+      : [{ nom: '', series: null, reps: null, charge: null }]
+  );
 
   // endurance
-  const [km, setKm] = useState('');
-  const [vitesse, setVitesse] = useState('');
-  const [denivele, setDenivele] = useState('');
-  const [duree, setDuree] = useState('');
+  const [km, setKm] = useState(template?.objectifs?.km ?? '');
+  const [vitesse, setVitesse] = useState(template?.objectifs?.vitesse ?? '');
+  const [denivele, setDenivele] = useState(template?.objectifs?.denivele ?? '');
+  const [duree, setDuree] = useState(template?.objectifs?.duree ?? '');
 
   // suggestions
   const [pastExercises, setPastExercises] = useState<string[]>([]);
@@ -83,13 +87,14 @@ export default function Step2() {
   const isForce = sport === 'musculation' || sport === 'crossfit';
   const isEndurance = sport === 'running' || sport === 'velo';
 
-  // Auto-focus sur le nom au chargement
+  // Auto-focus sur le nom au chargement (seulement si pas de template)
   useEffect(() => {
+    if (template) return;
     const timer = setTimeout(() => {
       if (nomRef.current) nomRef.current.focus();
     }, 300);
     return () => clearTimeout(timer);
-  }, []);
+  }, [template]);
 
   // Charger les exercices passés pour les suggestions
   useEffect(() => {
@@ -284,6 +289,12 @@ export default function Step2() {
                   <Ionicons name={meta.icon as IoniconName} size={32} color="#fff" />
                 </View>
                 <Text style={{ fontSize: 24, fontWeight: '700', color: colors.primary }}>{meta.label}</Text>
+                {template && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, backgroundColor: colors.primary + '18' }}>
+                    <Ionicons name="clipboard-outline" size={12} color={colors.primary} />
+                    <Text style={{ fontSize: 12, color: colors.primary, fontWeight: '600' }}>{template.type}</Text>
+                  </View>
+                )}
               </View>
             )}
 
