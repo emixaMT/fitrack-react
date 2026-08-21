@@ -261,15 +261,6 @@ export default function AmisScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ color: colors.textSecondary, marginTop: 8 }}>Chargement…</Text>
-      </View>
-    );
-  }
-
   const renderLeaderboardEntry = useCallback((entry: LeaderboardEntry) => (
     <LeaderboardCard entry={entry} colors={colors} userId={user?.id} />
   ), [colors, user?.id]);
@@ -281,6 +272,15 @@ export default function AmisScreen() {
   const renderPending = useCallback((friend: Friend) => (
     <PendingCard friend={friend} colors={colors} onAccept={handleAccept} />
   ), [colors, handleAccept]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.textSecondary, marginTop: 8 }}>Chargement…</Text>
+      </View>
+    );
+  }
 
   return (
     <>
