@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { cardStyle } from "../../../utils/styles";
+import { logError } from "../../../utils/logger";
 import { importSeance, readJsonFile } from "../../../services/seanceIO";
 import * as DocumentPicker from "expo-document-picker";
 import { Toast } from "../../../components/Toast";
@@ -148,10 +149,15 @@ export default function WorkoutScreen() {
     if (!user) return;
     let ch: ReturnType<typeof supabase.channel> | null = null;
     loadSeances(user.id, true);
-    ch = supabase.channel(`workout-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'seances', filter: `id_user=eq.${user.id}` },
-        () => loadSeances(user.id, true))
-      .subscribe();
+    // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
+    try {
+      ch = supabase.channel(`workout-${user.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'seances', filter: `id_user=eq.${user.id}` },
+          () => loadSeances(user.id, true))
+        .subscribe();
+    } catch (e) {
+      logError('Workout realtime subscription failed:', e);
+    }
     return () => { if (ch) supabase.removeChannel(ch); };
   }, [user?.id]);
 

@@ -6,6 +6,7 @@ import { supabase } from '../config/supabaseConfig';
 import { SportKey, sportsMeta } from '../constants/sport';
 import { useTheme } from '../contexts/ThemeContext';
 import { getMonthlyStats } from '../services/sessionCounterService';
+import { logError } from '../utils/logger';
 
 interface WorkoutStats {
   musculation: number;
@@ -39,26 +40,32 @@ export default function WorkoutDistributionChart({ userId }: { userId: string | 
     loadWorkoutStats();
 
     // Subscription en temps réel pour écouter les changements de compteurs
-    const channel = supabase
-      .channel(`workout-distribution-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'session_counters',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          // Recharger les stats immédiatement quand un compteur change
-          loadWorkoutStats();
-        }
-      )
-      .subscribe();
+    // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(`workout-distribution-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'session_counters',
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            // Recharger les stats immédiatement quand un compteur change
+            loadWorkoutStats();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      logError('Workout distribution realtime subscription failed:', e);
+    }
 
     // Cleanup: se désabonner quand le composant est démonté
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [userId]);
 

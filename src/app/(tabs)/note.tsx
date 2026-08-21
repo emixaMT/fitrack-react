@@ -9,6 +9,7 @@ import { supabase } from "../../../config/supabaseConfig";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useTheme, type ThemeColors } from "../../../contexts/ThemeContext";
 import { cardStyle } from "../../../utils/styles";
+import { logError } from "../../../utils/logger";
 
 const PAGE_SIZE = 20;
 
@@ -99,10 +100,15 @@ export default function NotesScreen() {
     if (!user) return;
     let ch: ReturnType<typeof supabase.channel> | null = null;
     loadNotes(user.id, true);
-    ch = supabase.channel(`notes-${user.id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `id_user=eq.${user.id}` },
-        () => loadNotes(user.id, true))
-      .subscribe();
+    // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
+    try {
+      ch = supabase.channel(`notes-${user.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notes', filter: `id_user=eq.${user.id}` },
+          () => loadNotes(user.id, true))
+        .subscribe();
+    } catch (e) {
+      logError('Notes realtime subscription failed:', e);
+    }
     return () => { if (ch) supabase.removeChannel(ch); };
   }, [user?.id]);
 

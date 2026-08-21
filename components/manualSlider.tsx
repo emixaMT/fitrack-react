@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../config/supabaseConfig';
 import { useTheme } from '../contexts/ThemeContext';
 import { cardShadow } from '../utils/styles';
+import { logError } from '../utils/logger';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -48,10 +49,15 @@ export default function LastSeancesSlider() {
     let ch: ReturnType<typeof supabase.channel> | null = null;
     const setup = async (userId: string) => {
       await loadSeancesData(userId);
-      ch = supabase.channel(`slider-${userId}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'seances', filter: `id_user=eq.${userId}` },
-          async () => { await loadSeancesData(userId); })
-        .subscribe();
+      // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
+      try {
+        ch = supabase.channel(`slider-${userId}`)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'seances', filter: `id_user=eq.${userId}` },
+            async () => { await loadSeancesData(userId); })
+          .subscribe();
+      } catch (e) {
+        logError('Slider realtime subscription failed:', e);
+      }
     };
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) setup(session.user.id); else { setSeances([]); setLoading(false); }

@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Pressable, TouchableOpacity } from 'react-nativ
 import { supabase } from '../config/supabaseConfig';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../contexts/ThemeContext';
+import { logError } from '../utils/logger';
 
 interface ChallengeCalendarProps {
   userId: string | null;
@@ -60,24 +61,30 @@ export const ChallengeCalendar: React.FC<ChallengeCalendarProps> = ({ userId }) 
     fetchCompletedChallenges();
 
     // S'abonner aux changements en temps réel
-    const channel = supabase
-      .channel(`challenges-calendar-${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'completed_challenges',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          fetchCompletedChallenges();
-        }
-      )
-      .subscribe();
+    // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      channel = supabase
+        .channel(`challenges-calendar-${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'completed_challenges',
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            fetchCompletedChallenges();
+          }
+        )
+        .subscribe();
+    } catch (e) {
+      logError('Challenge calendar realtime subscription failed:', e);
+    }
 
     return () => {
-      channel.unsubscribe();
+      if (channel) channel.unsubscribe();
     };
   }, [userId]);
 

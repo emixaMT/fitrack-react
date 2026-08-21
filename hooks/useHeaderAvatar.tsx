@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
 import { supabase } from "../config/supabaseConfig";
 import { getAvatarSourceById } from "../constants/avatars";
+import { logError } from "../utils/logger";
 
 interface UserRow {
   avatar_id?: string | null;
@@ -44,28 +45,33 @@ export function useHeaderAvatar(fallback: ImageSourcePropType) {
       }
 
       // Realtime subscription
-      realtimeChannel = supabase
-        .channel(`avatar-${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'users',
-            filter: `id=eq.${userId}`,
-          },
-          (payload) => {
-            const newData = payload.new as UserRow;
-            if (typeof newData?.avatar_id === "string" && newData.avatar_id) {
-              setSource(getAvatarSourceById(newData.avatar_id));
-            } else if (newData?.photo_url) {
-              setSource({ uri: newData.photo_url });
-            } else {
-              setSource(fallback);
+      // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
+      try {
+        realtimeChannel = supabase
+          .channel(`avatar-${userId}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'users',
+              filter: `id=eq.${userId}`,
+            },
+            (payload) => {
+              const newData = payload.new as UserRow;
+              if (typeof newData?.avatar_id === "string" && newData.avatar_id) {
+                setSource(getAvatarSourceById(newData.avatar_id));
+              } else if (newData?.photo_url) {
+                setSource({ uri: newData.photo_url });
+              } else {
+                setSource(fallback);
+              }
             }
-          }
-        )
-        .subscribe();
+          )
+          .subscribe();
+      } catch (e) {
+        logError('Avatar realtime subscription failed:', e);
+      }
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {

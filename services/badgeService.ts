@@ -626,22 +626,28 @@ export const subscribeToUserBadges = (
   userId: string,
   callback: (payload: RealtimePostgresChangesPayload<UserBadgePayload>) => void
 ) => {
-  const subscription = supabase
-    .channel(`user_badges:${userId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'user_badges',
-        filter: `user_id=eq.${userId}`,
-      },
-      callback
-    )
-    .subscribe();
+  // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
+  let subscription: ReturnType<typeof supabase.channel> | null = null;
+  try {
+    subscription = supabase
+      .channel(`user_badges:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_badges',
+          filter: `user_id=eq.${userId}`,
+        },
+        callback
+      )
+      .subscribe();
+  } catch (e) {
+    logError('Badge subscription failed:', e);
+  }
 
   return () => {
-    subscription.unsubscribe();
+    if (subscription) subscription.unsubscribe();
   };
 };
 
