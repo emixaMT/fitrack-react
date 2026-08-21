@@ -11,6 +11,8 @@ import { safeUUID } from "../../../utils/validation";
 import { exportSeance } from "../../../services/seanceIO";
 import { Toast } from "../../../components/Toast";
 import { logError } from "../../../utils/logger";
+import RouteMap from "../../../components/RouteMap";
+import { TrackPoint } from "../../../utils/gpx";
 import React from "react";
 
 type Objectifs = {
@@ -31,12 +33,20 @@ type Exercice = {
   duree?: number | string;
 };
 
+type RouteData = {
+  points: TrackPoint[];
+  distanceKm: number;
+  durationSec: number;
+  elevationGainM: number;
+};
+
 type Seance = {
   id: string;
   nom: string;
-  category: keyof typeof sportsMeta;   // 'velo' | 'running' | 'musculation' | ...
-  objectifs?: Objectifs;               // <-- pour running/velo
-  exercices?: Exercice[];              // <-- pour musculation/crossfit
+  category: keyof typeof sportsMeta;
+  objectifs?: Objectifs;
+  exercices?: Exercice[];
+  route_data?: RouteData | null;
 };
 
 /** Ionicons glyph name type */
@@ -76,6 +86,7 @@ export default function SeanceDetail() {
           category: data.category,
           objectifs: data.objectifs,
           exercices: data.exercices,
+          route_data: data.route_data ?? null,
         });
       } catch (e) {
         logError(e);
@@ -145,6 +156,21 @@ export default function SeanceDetail() {
             </View>
           </>
         ) : null}
+
+        {/* Carte de la trace GPS */}
+        {isEndurance && seance.route_data && seance.route_data.points.length > 0 && (
+          <View style={{ marginBottom: 24 }}>
+            <Text className="text-lg font-semibold mb-4" style={{ color: colors.text }}>Trace GPS</Text>
+            <RouteMap
+              points={seance.route_data.points}
+              height={280}
+              showStats={true}
+              distanceKm={seance.route_data.distanceKm}
+              durationSec={seance.route_data.durationSec}
+              elevationGain={seance.route_data.elevationGainM}
+            />
+          </View>
+        )}
 
         {/* Bloc Force (muscu / crossfit) */}
         {!isEndurance && (

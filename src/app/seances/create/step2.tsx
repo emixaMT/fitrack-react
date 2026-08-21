@@ -22,6 +22,10 @@ import { useTheme } from '../../../../contexts/ThemeContext';
 import { useAuth } from '../../../../contexts/AuthContext';
 import { useExerciseRecords } from '../../../../hooks/useExerciseRecords';
 import { logError } from '../../../../utils/logger';
+import { parseGPX, generateGPX, TrackPoint, formatDistance, formatDuration } from '../../../../utils/gpx';
+import RouteMap from '../../../../components/RouteMap';
+import GPSTracker from '../../../../components/GPSTracker';
+import * as DocumentPicker from 'expo-document-picker';
 import React from 'react';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Haptics from 'expo-haptics';
@@ -41,6 +45,12 @@ interface SeanceInsertPayload {
     vitesse: string;
     denivele: string;
     duree?: string;
+  };
+  route_data?: {
+    points: TrackPoint[];
+    distanceKm: number;
+    durationSec: number;
+    elevationGainM: number;
   };
 }
 
@@ -83,6 +93,15 @@ export default function Step2() {
   const [pastExercises, setPastExercises] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeExoIdx, setActiveExoIdx] = useState<number | null>(null);
+
+  // route GPS (running/vélo)
+  const [routeData, setRouteData] = useState<{
+    points: TrackPoint[];
+    distanceKm: number;
+    durationSec: number;
+    elevationGainM: number;
+  } | null>(null);
+  const [showGPSTracker, setShowGPSTracker] = useState(false);
 
   const isForce = sport === 'musculation' || sport === 'crossfit';
   const isEndurance = sport === 'running' || sport === 'velo';
@@ -226,6 +245,10 @@ export default function Step2() {
         payload.exercices = [];
       }
 
+      if (routeData) {
+        payload.route_data = routeData;
+      }
+
       const { error } = await supabase.from('seances').insert(payload);
 
       if (error) throw error;
@@ -246,6 +269,105 @@ export default function Step2() {
     Keyboard.dismiss();
     setShowSuggestions(false);
     setActiveExoIdx(null);
+  };
+
+  // Importer un fichier GPX
+  const handleImportGPX = async () => {
+    try {
+      if (Platform.OS === 'web') {
+        // Web: trigger hidden file input
+        const input = document.getElementById('gpx-import-input') as HTMLInputElement | null;
+        if (input) { input.value = ''; input.click(); }
+        return;
+      }
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/gpx+xml', 'application/xml', 'text/xml', 'text/plain', '*/*'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets || result.assets.length === 0) return;
+      const file = result.assets[0];
+
+      // Lire le contenu du fichier
+      const response = await fetch(file.uri);
+      const content = await response.text();
+      processGPXContent(content);
+    } catch (e) {
+      logError('GPX import error:', e);
+      Alert.alert('Erreur', 'Impossible de lire le fichier GPX.');
+    }
+  };
+
+  // Traiter le contenu GPX
+  const processGPXContent = (content: string) => {
+    const gpx = parseGPX(content);
+    if (!gpx || gpx.points.length === 0) {
+      Alert.alert('Erreur', 'Fichier GPX invalide ou sans points de trace.');
+      return;
+    }
+
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setRouteData({
+      points: gpx.points,
+      distanceKm: gpx.distanceKm,
+      durationSec: gpx.durationSec,
+      elevationGainM: gpx.elevationGainM,
+    });
+
+    // Pré-remplir les champs endurance avec les données du GPX
+    setKm(gpx.distanceKm.toFixed(2));
+    if (gpx.elevationGainM > 0) setDenivele(String(Math.round(gpx.elevationGainM)));
+    if (gpx.durationSec > 0) {
+      const hours = Math.floor(gpx.durationSec / 3600);
+      const mins = Math.floor((gpx.durationSec % 3600) / 60);
+      setDuree(hours > 0 ? `${hours}h${String(mins).padStart(2, '0')}` : `${mins} min`);
+      // Calculer la vitesse moyenne
+      if (gpx.distanceKm > 0) {
+        const avgSpeed = (gpx.distanceKm / gpx.durationSec) * 3600;
+        setVitesse(`${avgSpeed.toFixed(1)} km/h`);
+      }
+    }
+  };
+
+  // Callback du tracker GPS
+  const handleGPSTrackerClose = (points: TrackPoint[] | null) => {
+    setShowGPSTracker(false);
+    if (!points || points.length < 2) return;
+
+    const gpx = generateGPX(points, nomSeance || 'Trace live');
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setRouteData({
+      points,
+      distanceKm: gpx.distanceKm,
+      durationSec: gpx.durationSec,
+      elevationGainM: gpx.elevationGainM,
+    });
+
+    // Pré-remplir les champs
+    setKm(gpx.distanceKm.toFixed(2));
+    if (gpx.elevationGainM > 0) setDenivele(String(Math.round(gpx.elevationGainM)));
+    if (gpx.durationSec > 0) {
+      const hours = Math.floor(gpx.durationSec / 3600);
+      const mins = Math.floor((gpx.durationSec % 3600) / 60);
+      setDuree(hours > 0 ? `${hours}h${String(mins).padStart(2, '0')}` : `${mins} min`);
+      if (gpx.distanceKm > 0) {
+        const avgSpeed = (gpx.distanceKm / gpx.durationSec) * 3600;
+        setVitesse(`${avgSpeed.toFixed(1)} km/h`);
+      }
+    }
+  };
+
+  // Exporter la trace en GPX
+  const handleExportGPX = () => {
+    if (!routeData) return;
+    const gpx = generateGPX(routeData.points, nomSeance || 'Trace Fitrack');
+    const blob = new Blob([gpx.content], { type: 'application/gpx+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${nomSeance || 'trace'}.gpx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   return (
@@ -490,6 +612,84 @@ export default function Step2() {
               <View>
                 <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, marginBottom: 10 }}>Objectifs</Text>
 
+                {/* Section GPS / GPX */}
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+                  <Pressable
+                    onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowGPSTracker(true); }}
+                    style={{
+                      flex: 1, borderRadius: 12, paddingVertical: 14, alignItems: 'center',
+                      backgroundColor: colors.card, flexDirection: 'row', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    <Ionicons name="navigate" size={18} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}>Tracking GPS</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleImportGPX}
+                    style={{
+                      flex: 1, borderRadius: 12, paddingVertical: 14, alignItems: 'center',
+                      backgroundColor: colors.card, flexDirection: 'row', justifyContent: 'center', gap: 6,
+                    }}
+                  >
+                    <Ionicons name="document-attach-outline" size={18} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 14 }}>Importer GPX</Text>
+                  </Pressable>
+                </View>
+
+                {/* Carte si trace disponible */}
+                {routeData && (
+                  <View style={{ marginBottom: 16 }}>
+                    <RouteMap
+                      points={routeData.points}
+                      height={200}
+                      showStats={true}
+                      distanceKm={routeData.distanceKm}
+                      durationSec={routeData.durationSec}
+                      elevationGain={routeData.elevationGainM}
+                    />
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <Pressable
+                        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setRouteData(null); }}
+                        style={{
+                          paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+                          backgroundColor: colors.error + '1A', flexDirection: 'row', alignItems: 'center', gap: 4,
+                        }}
+                      >
+                        <Ionicons name="trash-outline" size={14} color={colors.error} />
+                        <Text style={{ color: colors.error, fontWeight: '600', fontSize: 13 }}>Supprimer</Text>
+                      </Pressable>
+                      {Platform.OS === 'web' && (
+                        <Pressable
+                          onPress={handleExportGPX}
+                          style={{
+                            paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+                            backgroundColor: colors.primary + '18', flexDirection: 'row', alignItems: 'center', gap: 4,
+                          }}
+                        >
+                          <Ionicons name="download-outline" size={14} color={colors.primary} />
+                          <Text style={{ color: colors.primary, fontWeight: '600', fontSize: 13 }}>Export GPX</Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                )}
+
+                {/* Input hidden pour import GPX sur web */}
+                {Platform.OS === 'web' && (
+                  <input
+                    id="gpx-import-input"
+                    type="file"
+                    accept=".gpx,application/gpx+xml,application/xml,text/xml"
+                    style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const content = await file.text();
+                      processGPXContent(content);
+                    }}
+                  />
+                )}
+
                 <Text style={{ fontSize: 12, color: colors.textTertiary, marginBottom: 4 }}>Distance (km)</Text>
                 <TextInput
                   value={km}
@@ -568,6 +768,9 @@ export default function Step2() {
           </View>
         </View>
       </TouchableWithoutFeedback>
+
+      {/* Modal tracking GPS */}
+      <GPSTracker visible={showGPSTracker} onClose={handleGPSTrackerClose} />
     </KeyboardAvoidingView>
   );
 }
