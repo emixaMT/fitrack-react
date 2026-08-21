@@ -7,6 +7,7 @@ import { checkAndUnlockBadges } from '../services/badgeService';
 import { SportKey } from '../constants/sport';
 import { cancelGoalReminders } from './useGoalReminders';
 import { logError } from '../utils/logger';
+import { safeRealtimeChannel } from '../utils/realtime';
 
 const MONTHLY_TARGET_DEFAULT = 10;
 
@@ -96,30 +97,17 @@ export function useMonthlyProgress(): MonthlyProgress {
       }
 
       // Souscrire aux changements en temps réel
-      // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
-      try {
-        realtimeChannel = supabase
-          .channel(`user-${userId}`)
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'users',
-              filter: `id=eq.${userId}`,
-            },
-            (payload) => {
-              const d = payload.new as UserRow;
-              setUserName(d?.name || userEmail?.split('@')[0] || '');
-              setSessions(d?.monthly_sessions ?? 0);
-              setTarget(d?.monthly_target ?? MONTHLY_TARGET_DEFAULT);
-              setMonthKey(d?.month_key ?? monthKeyNow());
-            }
-          )
-          .subscribe();
-      } catch (e) {
-        logError('Monthly progress realtime subscription failed:', e);
-      }
+      realtimeChannel = safeRealtimeChannel(
+        `user-${userId}`,
+        { event: '*', schema: 'public', table: 'users', filter: `id=eq.${userId}` },
+        (payload) => {
+          const d = payload.new as UserRow;
+          setUserName(d?.name || userEmail?.split('@')[0] || '');
+          setSessions(d?.monthly_sessions ?? 0);
+          setTarget(d?.monthly_target ?? MONTHLY_TARGET_DEFAULT);
+          setMonthKey(d?.month_key ?? monthKeyNow());
+        }
+      );
     };
 
     setupUser(user.id, user.email);

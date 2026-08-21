@@ -6,6 +6,7 @@ import { supabase } from '../config/supabaseConfig';
 import { useTheme } from '../contexts/ThemeContext';
 import { cardShadow } from '../utils/styles';
 import { logError } from '../utils/logger';
+import { safeRealtimeChannel } from '../utils/realtime';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -56,14 +57,11 @@ export default function LastSeancesSlider() {
       if (ch) { supabase.removeChannel(ch); ch = null; }
       await loadSeancesData(userId);
       if (!isMounted) return;
-      try {
-        ch = supabase.channel(`slider-${userId}`)
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'seances', filter: `id_user=eq.${userId}` },
-            async () => { if (isMounted) await loadSeancesData(userId); })
-          .subscribe();
-      } catch (e) {
-        logError('Slider realtime subscription failed:', e);
-      }
+      ch = safeRealtimeChannel(
+        `slider-${userId}`,
+        { event: '*', schema: 'public', table: 'seances', filter: `id_user=eq.${userId}` },
+        async () => { if (isMounted) await loadSeancesData(userId); }
+      );
     };
 
     supabase.auth.getSession().then(({ data: { session } }) => {

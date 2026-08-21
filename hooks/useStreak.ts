@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../config/supabaseConfig';
 import { logError } from '../utils/logger';
+import { safeRealtimeChannel } from '../utils/realtime';
 
 /**
  * Hook pour calculer la streak (jours consécutifs d'incrémentation de monthly_sessions)
@@ -77,29 +78,14 @@ export const useStreak = (userId: string | null) => {
     calculateStreak();
 
     // S'abonner aux changements de streak_history pour mettre à jour la streak
-    // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
-    try {
-      channel = supabase
-        .channel(`streak-${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'streak_history',
-            filter: `user_id=eq.${userId}`,
-          },
-          () => {
-            calculateStreak();
-          }
-        )
-        .subscribe();
-    } catch (e) {
-      logError('Streak realtime subscription failed:', e);
-    }
+    channel = safeRealtimeChannel(
+      `streak-${userId}`,
+      { event: '*', schema: 'public', table: 'streak_history', filter: `user_id=eq.${userId}` },
+      () => { calculateStreak(); }
+    );
 
     return () => {
-      if (channel) channel.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
     };
   }, [userId]);
 

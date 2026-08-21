@@ -3,6 +3,7 @@ import { supabase } from '../config/supabaseConfig';
 import { BADGE_IMAGES } from '../constants/badgeImages';
 import { getTotalHistoricalSessions, getTotalByType } from './sessionCounterService';
 import { logError } from '../utils/logger';
+import { safeRealtimeChannel } from '../utils/realtime';
 import type { ImageSourcePropType } from 'react-native';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
@@ -626,28 +627,14 @@ export const subscribeToUserBadges = (
   userId: string,
   callback: (payload: RealtimePostgresChangesPayload<UserBadgePayload>) => void
 ) => {
-  // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
-  let subscription: ReturnType<typeof supabase.channel> | null = null;
-  try {
-    subscription = supabase
-      .channel(`user_badges:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_badges',
-          filter: `user_id=eq.${userId}`,
-        },
-        callback
-      )
-      .subscribe();
-  } catch (e) {
-    logError('Badge subscription failed:', e);
-  }
+  const channel = safeRealtimeChannel(
+    `user_badges:${userId}`,
+    { event: '*', schema: 'public', table: 'user_badges', filter: `user_id=eq.${userId}` },
+    callback as (payload: Record<string, unknown>) => void
+  );
 
   return () => {
-    if (subscription) subscription.unsubscribe();
+    if (channel) supabase.removeChannel(channel);
   };
 };
 

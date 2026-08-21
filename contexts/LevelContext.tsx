@@ -7,6 +7,7 @@ import {
   addXP as addXPService,
 } from '../services/levelService';
 import { logError } from '../utils/logger';
+import { safeRealtimeChannel } from '../utils/realtime';
 
 interface LevelContextType {
   userLevel: UserLevel | null;
@@ -81,38 +82,20 @@ export const LevelProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!userId) return;
 
     // S'abonner aux changements en temps réel
-    // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      channel = supabase
-        .channel(`user-level-global-${userId}`, {
-          config: {
-            broadcast: { self: true },
-          },
-        })
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'user_levels',
-            filter: `user_id=eq.${userId}`,
-          },
-          (payload) => {
-            if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-              if (payload.new) {
-                setUserLevel(payload.new as UserLevel);
-              }
-            }
+    const channel = safeRealtimeChannel(
+      `user-level-global-${userId}`,
+      { event: '*', schema: 'public', table: 'user_levels', filter: `user_id=eq.${userId}` },
+      (payload) => {
+        if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+          if (payload.new) {
+            setUserLevel(payload.new as UserLevel);
           }
-        )
-        .subscribe();
-    } catch (e) {
-      logError('Level realtime subscription failed:', e);
-    }
+        }
+      }
+    );
 
     return () => {
-      if (channel) channel.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
     };
   }, [userId]);
 

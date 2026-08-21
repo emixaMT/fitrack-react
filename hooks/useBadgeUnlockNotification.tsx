@@ -3,6 +3,7 @@ import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from '../config/supabaseConfig';
 import { Badge } from '../services/badgeService';
 import { logError } from '../utils/logger';
+import { safeRealtimeChannel } from '../utils/realtime';
 
 interface UserBadge {
   id: string;
@@ -58,47 +59,34 @@ export const useBadgeUnlockNotification = (userId: string | null) => {
     loadNewBadges();
 
     // Écouter les nouveaux badges en temps réel
-    // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
     let subscription: ReturnType<typeof supabase.channel> | null = null;
-    try {
-      subscription = supabase
-        .channel(`badge_unlocks:${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'user_badges',
-            filter: `user_id=eq.${userId}`,
-          },
-          async (payload: RealtimePostgresChangesPayload<{ id: string }>) => {
-            // Récupérer les détails du badge
-            const { data: userBadge } = await supabase
-              .from('user_badges')
-              .select(`
-                *,
-                badge:badges(*)
-              `)
-              .eq('id', (payload.new as { id: string }).id)
-              .single();
+    subscription = safeRealtimeChannel(
+      `badge_unlocks:${userId}`,
+      { event: 'INSERT', schema: 'public', table: 'user_badges', filter: `user_id=eq.${userId}` },
+      async (payload) => {
+        // Récupérer les détails du badge
+        const { data: userBadge } = await supabase
+          .from('user_badges')
+          .select(`
+            *,
+            badge:badges(*)
+          `)
+          .eq('id', (payload.new as { id: string }).id)
+          .single();
 
-            if (userBadge?.badge) {
-              setQueue((prev) => [...prev, userBadge.badge]);
-              
-              // Si aucun badge n'est affiché, afficher celui-ci
-              if (!badgeToShow) {
-                setBadgeToShow(userBadge.badge);
-              }
-            }
+        if (userBadge?.badge) {
+          setQueue((prev) => [...prev, userBadge.badge]);
+
+          // Si aucun badge n'est affiché, afficher celui-ci
+          if (!badgeToShow) {
+            setBadgeToShow(userBadge.badge);
           }
-        )
-        .subscribe();
-    } catch (e) {
-      logError('Badge unlock notification realtime subscription failed:', e);
-    }
+        }
+      }
+    );
 
     return () => {
-      if (subscription) subscription.unsubscribe();
+      if (subscription) supabase.removeChannel(subscription);
     };
   }, [userId, badgeToShow]);
 
