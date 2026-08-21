@@ -8,7 +8,12 @@ import { logError } from './logger';
  * deux fois avec le même nom. Si le premier est déjà subscribé, le deuxième
  * .on('postgres_changes') lance: "cannot add postgres_changes callbacks after subscribe()"
  *
- * Solution: supprimer tout channel existant avec le même nom avant d'en créer un nouveau.
+ * removeChannel() est async — le channel n'est pas retiré immédiatement du cache,
+ * donc supabase.channel(name) peut retourner l'ancien channel déjà subscribé.
+ *
+ * Solution: utiliser un nom unique (avec compteur) pour chaque channel.
+ * Plus aucun collision possible. Les anciens channels sont nettoyés par
+ * le useEffect cleanup (supabase.removeChannel) du composant appelant.
  *
  * Usage:
  *   const channel = safeRealtimeChannel(
@@ -16,8 +21,10 @@ import { logError } from './logger';
  *     { event: '*', schema: 'public', table: 'streak_history', filter: `user_id=eq.${userId}` },
  *     (payload) => { ... }
  *   );
- *   // cleanup: supabase.removeChannel(channel);
+ *   // cleanup: if (channel) supabase.removeChannel(channel);
  */
+let channelCounter = 0;
+
 export function safeRealtimeChannel(
   name: string,
   filter: {
@@ -29,14 +36,11 @@ export function safeRealtimeChannel(
   callback: (payload: Record<string, unknown>) => void
 ): ReturnType<typeof supabase.channel> | null {
   try {
-    // Supprimer tout channel existant avec le même nom
-    const existing = supabase.getChannels().find((c) => c.topic === name);
-    if (existing) {
-      supabase.removeChannel(existing);
-    }
+    // Nom unique pour éviter tout collision avec un channel existant
+    const uniqueName = `${name}-${++channelCounter}`;
 
     return supabase
-      .channel(name)
+      .channel(uniqueName)
       .on('postgres_changes', filter, callback as never)
       .subscribe();
   } catch (e) {
