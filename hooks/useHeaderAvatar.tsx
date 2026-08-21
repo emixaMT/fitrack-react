@@ -82,7 +82,11 @@ export function useHeaderAvatar(fallback: ImageSourcePropType) {
       }
     });
 
+    let isFirstAuthChange = true;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Ignorer le premier fire (déjà géré par getSession)
+      if (isFirstAuthChange) { isFirstAuthChange = false; return; }
+
       if (realtimeChannel) {
         supabase.removeChannel(realtimeChannel);
         realtimeChannel = null;

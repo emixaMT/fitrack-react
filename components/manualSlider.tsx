@@ -47,26 +47,40 @@ export default function LastSeancesSlider() {
 
   useEffect(() => {
     let ch: ReturnType<typeof supabase.channel> | null = null;
+    let isMounted = true;
+    let isFirstAuthChange = true;
+
     const setup = async (userId: string) => {
+      if (!isMounted) return;
+      // Nettoyer l'ancien channel avant d'en créer un nouveau
+      if (ch) { supabase.removeChannel(ch); ch = null; }
       await loadSeancesData(userId);
-      // Wrap dans try/catch pour éviter le crash si la table n'est pas dans le realtime publication
+      if (!isMounted) return;
       try {
         ch = supabase.channel(`slider-${userId}`)
           .on('postgres_changes', { event: '*', schema: 'public', table: 'seances', filter: `id_user=eq.${userId}` },
-            async () => { await loadSeancesData(userId); })
+            async () => { if (isMounted) await loadSeancesData(userId); })
           .subscribe();
       } catch (e) {
         logError('Slider realtime subscription failed:', e);
       }
     };
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) setup(session.user.id); else { setSeances([]); setLoading(false); }
     });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (ch) { supabase.removeChannel(ch); ch = null; }
+      // Ignorer le premier fire (déjà géré par getSession)
+      if (isFirstAuthChange) { isFirstAuthChange = false; return; }
       if (session?.user) { setLoading(true); setup(session.user.id); } else { setSeances([]); setLoading(false); }
     });
-    return () => { subscription.unsubscribe(); if (ch) supabase.removeChannel(ch); };
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+      if (ch) supabase.removeChannel(ch);
+    };
   }, []);
 
   if (!loading && seances.length === 0) return null;
