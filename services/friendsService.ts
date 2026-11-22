@@ -14,6 +14,8 @@ export type Friend = {
   totalXP: number;
   badgeCount: number;
   monthlySessions: number;
+  /** true si la demande en attente a été reçue (et peut donc être acceptée) */
+  incoming?: boolean;
 };
 
 export type LeaderboardEntry = {
@@ -27,7 +29,7 @@ export type LeaderboardEntry = {
   rank: number;
 };
 
-/** Shape of a user row joined in the friends query */
+/** Shape of a public.users row used for friends display */
 interface FriendUserRow {
   id: string;
   name: string | null;
@@ -37,20 +39,24 @@ interface FriendUserRow {
   monthly_sessions?: number | null;
 }
 
-/** Shape of a sent friend relation row (user_id → friend_id) */
-interface SentFriendRow {
+/** Shape of a friends relation row */
+interface FriendRelationRow {
+  user_id: string;
   friend_id: string;
   status: FriendStatus;
-  created_at: string;
-  users?: FriendUserRow;
 }
 
-/** Shape of a received friend relation row (friend_id ← user_id) */
-interface ReceivedFriendRow {
+/** Résultat des RPC find_user_by_friend_code / find_user_by_email */
+interface FoundUserRow {
+  id: string;
+  name: string | null;
+}
+
+/** Shape of a user_levels row used for the leaderboard */
+interface UserLevelRow {
   user_id: string;
-  status: FriendStatus;
-  created_at: string;
-  users?: FriendUserRow;
+  level: number;
+  total_xp: number;
 }
 
 /** Shape of a user_badges row used for counting badges per user */
@@ -105,11 +111,9 @@ export async function addFriendByCode(userId: string, friendCode: string): Promi
   }
 
   // Trouver l'utilisateur par son code
-  const { data: targetUser, error: findError } = await supabase
-    .from('users')
-    .select('id, name')
-    .eq('friend_code', code)
-    .maybeSingle();
+  const { data: found, error: findError } = await supabase
+    .rpc('find_user_by_friend_code', { p_code: code });
+  const targetUser = (found as FoundUserRow[] | null)?.[0];
 
   if (findError || !targetUser) {
     return { success: false, message: 'Aucun utilisateur avec ce code.' };
@@ -123,7 +127,7 @@ export async function addFriendByCode(userId: string, friendCode: string): Promi
   const { data: existing } = await supabase
     .from('friends')
     .select('id, status')
-    .or(`and(user_id.eq.${userId},friend_id.eq.${targetUser.id}),and(user_id.eq.${targetUser.id},friend_id.eq.${userId})`)
+    .or(pairFilter(userId, targetUser.id))
     .maybeSingle();
 
   if (existing) {
@@ -144,47 +148,57 @@ export async function addFriendByCode(userId: string, friendCode: string): Promi
   return { success: true, message: `Demande envoyée à ${targetUser.name ?? 'l\'utilisateur'}.` };
 }
 
+/** Filtre PostgREST ciblant la relation entre deux utilisateurs, dans les deux sens */
+function pairFilter(a: string, b: string): string {
+  return `and(user_id.eq.${a},friend_id.eq.${b}),and(user_id.eq.${b},friend_id.eq.${a})`;
+}
+
 /** Récupère la liste d'amis (acceptés + en attente) */
 export async function getFriends(userId: string): Promise<{ friends: Friend[]; pending: Friend[] }> {
-  // Récupérer les relations d'amitié où l'utilisateur est impliqué
-  const { data: sent, error: err1 } = await supabase
+  // 1. Relations où l'utilisateur est impliqué (dans un sens ou dans l'autre)
+  const { data: relations, error: relError } = await supabase
     .from('friends')
-    .select('friend_id, status, created_at, users:friend_id(id, name, email, photo_url, photoURL, monthly_sessions)')
-    .eq('user_id', userId);
+    .select('user_id, friend_id, status')
+    .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
 
-  const { data: received, error: err2 } = await supabase
-    .from('friends')
-    .select('user_id, status, created_at, users!friends_friend_id_fkey(id, name, email, photo_url, photoURL, monthly_sessions)')
-    .eq('friend_id', userId);
+  if (relError || !relations?.length) return { friends: [], pending: [] };
 
-  if (err1 && err2) return { friends: [], pending: [] };
+  const rows = relations as FriendRelationRow[];
+  const otherIds = Array.from(new Set(rows.map(r => (r.user_id === userId ? r.friend_id : r.user_id))));
+
+  // 2. Profils des autres utilisateurs (la RLS n'autorise que les personnes liées)
+  const { data: users } = await supabase
+    .from('users')
+    .select('id, name, email, photo_url, photoURL, monthly_sessions')
+    .in('id', otherIds);
+
+  const userMap = new Map<string, FriendUserRow>();
+  ((users ?? []) as FriendUserRow[]).forEach(u => userMap.set(u.id, u));
 
   const friends: Friend[] = [];
   const pending: Friend[] = [];
 
-  const processEntry = (entry: SentFriendRow | ReceivedFriendRow, otherUserId: string, status: FriendStatus) => {
-    if (!entry) return;
-    const u = entry.users ?? (entry as unknown as FriendUserRow);
-    if (!u) return;
+  for (const r of rows) {
+    const incoming = r.friend_id === userId;
+    const otherId = incoming ? r.user_id : r.friend_id;
+    const u = userMap.get(otherId);
 
     const friend: Friend = {
-      id: otherUserId,
-      name: u.name ?? u.email?.split('@')[0] ?? 'Athlète',
-      email: u.email ?? '',
-      photoURL: u.photo_url ?? u.photoURL ?? null,
-      status,
-      level: 0, // Sera enrichi via getLeaderboard
+      id: otherId,
+      name: u?.name ?? u?.email?.split('@')[0] ?? 'Athlète',
+      email: u?.email ?? '',
+      photoURL: u?.photo_url ?? u?.photoURL ?? null,
+      status: r.status,
+      level: 0, // Enrichi via getLeaderboard
       totalXP: 0,
       badgeCount: 0,
-      monthlySessions: u.monthly_sessions ?? 0,
+      monthlySessions: u?.monthly_sessions ?? 0,
+      incoming,
     };
 
-    if (status === 'accepted') friends.push(friend);
-    else if (status === 'pending') pending.push(friend);
-  };
-
-  (sent || []).forEach((s) => processEntry(s as unknown as SentFriendRow, s.friend_id, s.status as FriendStatus));
-  (received || []).forEach((r) => processEntry(r as unknown as ReceivedFriendRow, r.user_id, r.status as FriendStatus));
+    if (r.status === 'accepted') friends.push(friend);
+    else if (r.status === 'pending') pending.push(friend);
+  }
 
   return { friends, pending };
 }
@@ -192,11 +206,9 @@ export async function getFriends(userId: string): Promise<{ friends: Friend[]; p
 /** Envoie une demande d'amitié par email */
 export async function sendFriendRequest(userId: string, friendEmail: string): Promise<{ success: boolean; message: string }> {
   // Trouver l'utilisateur par email
-  const { data: targetUser, error: findError } = await supabase
-    .from('users')
-    .select('id, email')
-    .eq('email', friendEmail.trim().toLowerCase())
-    .maybeSingle();
+  const { data: found, error: findError } = await supabase
+    .rpc('find_user_by_email', { p_email: friendEmail.trim().toLowerCase() });
+  const targetUser = (found as FoundUserRow[] | null)?.[0];
 
   if (findError || !targetUser) {
     return { success: false, message: 'Utilisateur introuvable.' };
@@ -210,8 +222,7 @@ export async function sendFriendRequest(userId: string, friendEmail: string): Pr
   const { data: existing } = await supabase
     .from('friends')
     .select('id, status')
-    .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
-    .or(`user_id.eq.${targetUser.id},friend_id.eq.${targetUser.id}`)
+    .or(pairFilter(userId, targetUser.id))
     .maybeSingle();
 
   if (existing) {
@@ -231,24 +242,26 @@ export async function sendFriendRequest(userId: string, friendEmail: string): Pr
 
 /** Accepte une demande d'amitié */
 export async function acceptFriendRequest(userId: string, friendId: string): Promise<boolean> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('friends')
     .update({ status: 'accepted' })
     .eq('user_id', friendId)
-    .eq('friend_id', userId);
+    .eq('friend_id', userId)
+    .eq('status', 'pending')
+    .select('id');
 
-  return !error;
+  return !error && (data?.length ?? 0) > 0;
 }
 
 /** Supprime un ami */
 export async function removeFriend(userId: string, friendId: string): Promise<boolean> {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('friends')
     .delete()
-    .or(`user_id.eq.${userId},friend_id.eq.${friendId}`)
-    .or(`user_id.eq.${friendId},friend_id.eq.${userId}`);
+    .or(pairFilter(userId, friendId))
+    .select('id');
 
-  return !error;
+  return !error && (data?.length ?? 0) > 0;
 }
 
 /** Récupère le classement (amis + soi-même) par niveau XP */
@@ -269,6 +282,15 @@ export async function getLeaderboard(userId: string): Promise<LeaderboardEntry[]
     badgeCountMap[b.user_id] = (badgeCountMap[b.user_id] ?? 0) + 1;
   });
 
+  // Niveaux / XP (lisibles pour soi et les amis acceptés)
+  const { data: levels } = await supabase
+    .from('user_levels')
+    .select('user_id, level, total_xp')
+    .in('user_id', friendIds);
+
+  const levelMap: Record<string, UserLevelRow> = {};
+  ((levels ?? []) as UserLevelRow[]).forEach(l => { levelMap[l.user_id] = l; });
+
   // Construire les entrées du classement
   const entries: LeaderboardEntry[] = [];
 
@@ -284,8 +306,8 @@ export async function getLeaderboard(userId: string): Promise<LeaderboardEntry[]
       id: userId,
       name: me.name ?? me.email?.split('@')[0] ?? 'Moi',
       photoURL: me.photo_url ?? me.photoURL ?? null,
-      level: 0,
-      totalXP: 0,
+      level: levelMap[userId]?.level ?? 1,
+      totalXP: levelMap[userId]?.total_xp ?? 0,
       badgeCount: badgeCountMap[userId] ?? 0,
       monthlySessions: me.monthly_sessions ?? 0,
       rank: 0,
@@ -298,8 +320,8 @@ export async function getLeaderboard(userId: string): Promise<LeaderboardEntry[]
       id: f.id,
       name: f.name,
       photoURL: f.photoURL,
-      level: 0,
-      totalXP: 0,
+      level: levelMap[f.id]?.level ?? 1,
+      totalXP: levelMap[f.id]?.total_xp ?? 0,
       badgeCount: badgeCountMap[f.id] ?? 0,
       monthlySessions: f.monthlySessions,
       rank: 0,

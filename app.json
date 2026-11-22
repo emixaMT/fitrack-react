@@ -21,7 +21,35 @@
         }
       ],
       "expo-secure-store",
-      "expo-barcode-scanner"
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Fitrack utilise la caméra pour scanner le QR code d'un ami et prendre ta photo de profil.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Fitrack utilise ta position pour enregistrer le tracé de tes sorties running et vélo.",
+          "locationAlwaysAndWhenInUsePermission": "Fitrack utilise ta position pour enregistrer le tracé de tes sorties running et vélo.",
+          "locationAlwaysPermission": "Fitrack utilise ta position pour enregistrer le tracé de tes sorties running et vélo."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Fitrack utilise Face ID pour te reconnecter rapidement."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Fitrack accède à tes photos pour choisir ta photo de profil.",
+          "cameraPermission": "Fitrack utilise la caméra pour scanner le QR code d'un ami et prendre ta photo de profil."
+        }
+      ]
     ],
     "name": "Fitrack",
     "slug": "fitrack",
@@ -36,18 +64,26 @@
     "android": {
       "package": "com.maximethonneau.fitrack",
       "permissions": [
-        "ACTIVITY_RECOGNITION"
+        "ACTIVITY_RECOGNITION",
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
       ],
       "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#4f46e5"
-      }
+      },
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "ios": {
       "bundleIdentifier": "com.maximethonneau.fitrack",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMotionUsageDescription": "Fitrack utilise le capteur de mouvement pour compter tes pas."
       }
     },
     "owner": "oxiiz"
