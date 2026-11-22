@@ -8,7 +8,7 @@ import {
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
-import type { BarCodeScanner as BarCodeScannerType, BarCodeScannerResult } from 'expo-barcode-scanner';
+import { CameraView, Camera, type BarcodeScanningResult } from 'expo-camera';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useTheme, type ThemeColors } from '../../../contexts/ThemeContext';
 import {
@@ -153,7 +153,8 @@ export default function AmisScreen() {
   // Scanner
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
-  const cameraRef = useRef<null>(null);
+  // Verrou synchrone : le scanner émet plusieurs détections avant le re-render
+  const scanLockRef = useRef(false);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -232,7 +233,8 @@ export default function AmisScreen() {
   };
 
   const handleScanResult = async (data: string) => {
-    if (scanned || !user) return;
+    if (scanLockRef.current || !user) return;
+    scanLockRef.current = true;
     setScanned(true);
 
     // Le QR code contient le code ami (8 caractères)
@@ -246,6 +248,7 @@ export default function AmisScreen() {
     }
 
     setScanned(false);
+    scanLockRef.current = false;
     setShowScannerModal(false);
   };
 
@@ -256,8 +259,7 @@ export default function AmisScreen() {
       return;
     }
     try {
-      const { BarCodeScanner } = await import('expo-barcode-scanner');
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
+      const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
       setShowScannerModal(true);
     } catch {
@@ -574,23 +576,14 @@ export default function AmisScreen() {
   );
 }
 
-// Composant scanner (chargé dynamiquement sur native)
+// Composant scanner QR (expo-camera)
 function ScannerView({ onScanned, scanned }: { onScanned: (data: string) => void; scanned: boolean }) {
-  const [BarCodeScanner, setBarCodeScanner] = useState<typeof BarCodeScannerType | null>(null);
-
-  useEffect(() => {
-    import('expo-barcode-scanner').then((mod) => {
-      setBarCodeScanner(() => mod.BarCodeScanner);
-    });
-  }, []);
-
-  if (!BarCodeScanner) return null;
-
   return (
-    <BarCodeScanner
-      onBarCodeScanned={scanned ? undefined : (result: BarCodeScannerResult) => onScanned(result.data)}
+    <CameraView
       style={StyleSheet.absoluteFillObject}
-      barCodeTypes={[BarCodeScanner.Constants.BarCodeType.qr]}
+      facing="back"
+      barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+      onBarcodeScanned={scanned ? undefined : (result: BarcodeScanningResult) => onScanned(result.data)}
     />
   );
 }
