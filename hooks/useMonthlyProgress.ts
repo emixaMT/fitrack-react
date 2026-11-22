@@ -150,23 +150,18 @@ export function useMonthlyProgress(): MonthlyProgress {
         setSessions(prev + 1);
       }
 
-      // Mettre à jour dans la base
-      if (prevKey !== currentKey) {
-        const { error: updateError } = await supabase
+      // Incrément atomique côté serveur (gère aussi le changement de mois)
+      const { data: newCount, error: updateError } = await supabase
+        .rpc('increment_monthly_session', { p_month_key: currentKey });
+      if (updateError) throw updateError;
+      if (typeof newCount === 'number') setSessions(newCount);
+
+      if (prevKey !== currentKey && userData?.monthly_target == null) {
+        const { error: targetError } = await supabase
           .from('users')
-          .update({
-            month_key: currentKey,
-            monthly_sessions: 1,
-            monthly_target: tgt,
-          })
+          .update({ monthly_target: tgt })
           .eq('id', user.id);
-        if (updateError) throw updateError;
-      } else {
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ monthly_sessions: prev + 1 })
-          .eq('id', user.id);
-        if (updateError) throw updateError;
+        if (targetError) logError('Error setting monthly target:', targetError);
       }
 
       // Incrémenter le compteur par type

@@ -113,14 +113,18 @@ const PendingCard = React.memo(function PendingCard({ friend, colors, onAccept }
       </View>
       <View style={{ flex: 1, marginLeft: 12 }}>
         <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text }}>{friend.name}</Text>
-        <Text style={{ fontSize: 12, color: colors.textTertiary }}>Demande d'ami</Text>
+        <Text style={{ fontSize: 12, color: colors.textTertiary }}>
+          {friend.incoming ? "Demande d'ami" : 'Demande envoyée'}
+        </Text>
       </View>
-      <Pressable
-        onPress={() => onAccept(friend.id)}
-        style={{ backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, marginRight: 8 }}
-      >
-        <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Accepter</Text>
-      </Pressable>
+      {friend.incoming && (
+        <Pressable
+          onPress={() => onAccept(friend.id)}
+          style={{ backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, marginRight: 8 }}
+        >
+          <Text style={{ color: '#fff', fontSize: 13, fontWeight: '600' }}>Accepter</Text>
+        </Pressable>
+      )}
     </View>
   );
 });
